@@ -147,7 +147,7 @@ class PbrFat():
 
 # test pbr- fat
 boots = BootSector()
-data = boots.readBootSector(r"\\.\H:")
+data = boots.readBootSector(r"\\.\E:")
 print("PBR FAT info:  ")
 pbr_fat = PbrFat(data)
 pbr_fat.readFat()
