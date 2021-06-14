@@ -1,5 +1,7 @@
 from tkinter import Tk, Text, TOP, BOTH, X, N, LEFT
 from tkinter import Frame, Label, Entry
+from tkinter import ttk
+from PIL import Image, ImageTk
 import win32api
 
 drives = win32api.GetLogicalDriveStrings()
@@ -15,17 +17,15 @@ class Example(Frame):
         self.parent = parent
         self.initUI()
 
-    def initUI(self):
-        self.parent.title("Đồ án Hệ điều hành")
-        self.pack(fill=BOTH, expand=True)
+    def Tab1(self, tab1):
 
-        frame1 = Frame(self)
+        frame1 = Frame(tab1)
         frame1.pack(fill=X)
 
         txt1 = Label(frame1, text = 'UNIVERSITY OF SCIENCE', font =("Georgia", 14))
         txt1.pack(anchor = N, padx=5, pady=3)
 
-        frame2 = Frame(self)
+        frame2 = Frame(tab1)
         frame2.pack(fill=X)
 
         txt2 = Label(frame2, text="FACULTY OF INFORMATION TECHNOLOGY", font=("Georgia", 12))
@@ -43,15 +43,40 @@ class Example(Frame):
         txt5= Label(frame2, text="  Teacher: Lê Viết Long", font=("Georgia", 12))
         txt5.pack(side=LEFT, padx=5, pady=3, fill = BOTH)
 
-        frame3 = Frame(self)
+        frame3 = Frame(tab1)
         frame3.pack(fill=BOTH, expand=True)
 
         stu = "  Students: Võ Hoàng Bảo Duy - 19127027 \n              Trần Ngọc Lam - 19127040\n     Lê Minh Sĩ - 19127064"
         txt6 = Label(frame3, text=stu, font=("Georgia", 12))
         txt6.pack(side=LEFT, padx=5, pady=3)
 
+        frame3.img= Image.open("D:\Github\Project01_OS\Ảnh1.png")
+
+        icon = ImageTk.PhotoImage(frame3.img)
+        label = Label(frame3, image=icon)
+        label.image=icon
+        label.pack()
+
+
+    def initUI(self):
+        self.parent.title("Đồ án Hệ điều hành")
+        self.pack(fill=BOTH, expand=True)
+        tab_control = ttk.Notebook(self)
+
+        tab1 = ttk.Frame(tab_control)
+
+        tab2 = ttk.Frame(tab_control)
+
+        tab_control.add(tab1, text='Thông tin nhóm')
+
+        tab_control.add(tab2, text='Thông tin ổ đĩa')
+
+        self.Tab1(tab1)
+        tab_control.pack(expand=1, fill='both')
+
+
 
 root = Tk()
-# root.geometry("500x300+300+300")
+root.geometry("500x300+300+300")
 app = Example(root)
 root.mainloop()
