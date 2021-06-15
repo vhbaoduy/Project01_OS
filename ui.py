@@ -1,11 +1,13 @@
+import tkinter
+import tkinter as tk
 from tkinter import Tk, Text, TOP, BOTH, X, N, LEFT
 from tkinter import Frame, Label, Entry
 from tkinter import ttk
 from PIL import Image, ImageTk
 import win32api
 
-drives = win32api.GetLogicalDriveStrings()
-drives = drives.split('\000') [:-1]
+# drives = win32api.GetLogicalDriveStrings()
+# drives = drives.split('\000') [:-1]
 
 
 
@@ -50,13 +52,47 @@ class Example(Frame):
         txt6 = Label(frame3, text=stu, font=("Georgia", 12))
         txt6.pack(side=LEFT, padx=5, pady=3)
 
-        frame3.img= Image.open("D:\Github\Project01_OS\Ảnh1.png")
+        frame3.img= Image.open("Ảnh1.png")
 
         icon = ImageTk.PhotoImage(frame3.img)
         label = Label(frame3, image=icon)
-        label.image=icon
+        label.image = icon
         label.pack()
 
+    def onClick(self,drive,tab2):
+        frame1 = Frame(tab2)
+        frame1.pack(fill=X)
+
+        label1 = Label(frame1, text= drive, font=("Georgia", 10))
+        label1.grid(column=2, row=5, padx=10, pady=25)
+
+    def onClick(self,selected_drive):
+        print(selected_drive.get())
+
+    def callback(self,eventObject):
+        # you can also get the value off the eventObject
+         return eventObject.widget.get()
+        # to see other information also available on the eventObject
+        # print(dir(eventObject))
+
+    def Tab2(self,tab2):
+        frame1 = Frame(tab2)
+        frame1.pack(fill=X)
+
+        label1 = Label(frame1, text = 'Select drive', font=("Georgia", 10))
+        label1.grid(column = 2 , row = 5, padx=10, pady=25)
+
+        drives = win32api.GetLogicalDriveStrings()
+        drives = drives.split('\000')[:-1]
+
+        selected_drive = tkinter.StringVar()
+        combobox = ttk.Combobox(frame1, textvariable = selected_drive)
+        combobox['value'] = drives
+        combobox['state'] = 'readonly'
+        combobox.grid(column = 3, row = 5, padx=10, pady=25)
+
+        button = tkinter.Button(frame1, text = 'Show', font=("Georgia", 10), command =lambda: self.onClick(selected_drive))
+        button.grid(column = 4, row = 5, padx=10, pady=25)
 
     def initUI(self):
         self.parent.title("Đồ án Hệ điều hành")
@@ -67,11 +103,12 @@ class Example(Frame):
 
         tab2 = ttk.Frame(tab_control)
 
-        tab_control.add(tab1, text='Thông tin nhóm')
+        tab_control.add(tab1, text="Group's Information")
 
-        tab_control.add(tab2, text='Thông tin ổ đĩa')
+        tab_control.add(tab2, text="Drive's Information")
 
         self.Tab1(tab1)
+        self.Tab2(tab2)
         tab_control.pack(expand=1, fill='both')
 
 
