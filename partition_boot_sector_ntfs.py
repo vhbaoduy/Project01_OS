@@ -99,7 +99,13 @@ class Bpb(RawStruct):
 #         for entry_id in self.entries:
 #             result += str(self.entries[entry_id]) + "\n\n"
 #         return result
-
+def NTFS():
+    boots = BootSector(None, 0, 512, r"\\.\E:")
+    boots.show_infor()
+    print("--------------")
+    print("MBR info:  ")
+    mbr = Mbr(boots.data_boot())
+    mbr.showInforOfPart()
 
 if __name__ == "__main__":
     boots = BootSector(None, 0, 512, r"\\.\E:")

@@ -64,8 +64,7 @@ class PartitionTable:
             print("--------------------------------")
 
 class Mbr():
-    def __init__(self, data):# WTF bên t hiện cái này khác. thì để t pull cái đã mà t đâu chỉnh mấy cái này
-        self.BootCode = data[:440]
+    def __init__(self, data):
         self.DiskSig = int.from_bytes(data[440:444],byteorder='little')
         self.Unused = data[444:446]
         self.Partitions = PartitionTable(data[446:510])
@@ -168,19 +167,21 @@ class PbrFat():
 #             # Re-run the program with admin rights
 #             ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
 # input()
+# rồi làm gì làm đi
 
+def FAT32():
+    boots = BootSector()
+    data = boots.readBootSector(r"\\.\E:")
+    print("PBR FAT info:  ")
+    pbr_fat = PbrFat(data)
+    pbr_fat.readFat()
+    pbr_fat.showInfo()
+    print("--------------")
+    print("MBR info:  ")
+    mbr = Mbr(data)
+    mbr.showInforOfPart()
 
-boots = BootSector()
-data = boots.readBootSector(r"\\.\E:")
-print("PBR FAT info:  ")
-pbr_fat = PbrFat(data)
-pbr_fat.readFat()
-pbr_fat.showInfo()
-print("--------------")
-print("MBR info:  ")
-mbr = Mbr(data)
-mbr.showInforOfPart()
-
+FAT32()
 
 # if __name__ == "__main__":
 #     # test pbr- fat

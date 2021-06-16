@@ -1,5 +1,5 @@
-
-
+from boot_sector_fat32 import FAT32
+from partition_boot_sector_ntfs import NTFS
 import tkinter
 import tkinter as tk
 from tkinter import Tk, Text, TOP, BOTH, X, N, LEFT
@@ -62,14 +62,19 @@ class Example(Frame):
         label.image = icon
         label.pack()
 
-    # def FAT32(self):
-    #     FAT32()
+    def FAT32(self):
+        FAT32()
+
+    def NTFS(self):
+        NTFS()
 
     def onClick(self,selected_drive):
         print(selected_drive.get())
         print(win32api.GetVolumeInformation(selected_drive.get())[4])
-        # if (win32api.GetVolumeInformation(selected_drive.get())[4]=='FAT32'):
-        #     self.FAT32()
+        if (win32api.GetVolumeInformation(selected_drive.get())[4]=='FAT32'):
+            self.FAT32()
+        if (win32api.GetVolumeInformation(selected_drive.get())[4]=='NTFS'):
+            self.NTFS()
 
     def callback(self,eventObject):
         # you can also get the value off the eventObject
