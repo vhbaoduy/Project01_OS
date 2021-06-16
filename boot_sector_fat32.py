@@ -21,7 +21,7 @@ class PartitionEntry():
         self.type = hex(int.from_bytes(data[4:5],byteorder = 'little'))
         self.endHead = int.from_bytes(data[5:6],byteorder='little')
 
-        #decode
+        #m để cho t pull code thằng Sĩ cái conflict quá trời nè
         temp = int.from_bytes(data[6:7], byteorder='little')
         self.endSector = temp & 0x3F
         self.endCylinder =  (((temp & 0XC0) >> 6) << 8) +int.from_bytes(data[7:8], byteorder='little')
@@ -64,7 +64,7 @@ class PartitionTable:
             print("--------------------------------")
 
 class Mbr():
-    def __init__(self,bootSectorData):
+    def __init__(self, data):# WTF bên t hiện cái này khác. thì để t pull cái đã mà t đâu chỉnh mấy cái này
         self.BootCode = data[:440]
         self.DiskSig = int.from_bytes(data[440:444],byteorder='little')
         self.Unused = data[444:446]
@@ -144,42 +144,56 @@ class PbrFat():
         print("Loại FAT: ", self.BS_FileSysType)
 
 
-def is_admin():
-    try:
-            return ctypes.windll.shell32.IsUserAnAdmin()
-    except:
-            return False
-# sửa gì đi mẹ cái của t r :)
-# loz t đang làm cái xuất ra ui mà t định test chọn ổ đĩa rồi xuất consolve trc mà nó lỗi ý là cái của m ấy
-if is_admin():
-            boots = BootSector()
-            data = boots.readBootSector(r"\\.\E:")
-            print("PBR FAT info:  ")
-            pbr_fat = PbrFat(data)
-            pbr_fat.readFat()
-            pbr_fat.showInfo()
-            print("--------------")
-            print("MBR info:  ")
-            mbr = Mbr(data)
-            mbr.showInforOfPart()
-            # for v in data:
-            #     print(hex(v), end=' ')
-else:
-            # Re-run the program with admin rights
-            ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
-input()
 
-#từ t qua máy t test cai
-# boots = BootSector()
-# data = boots.readBootSector(r"\\.\E:")
-# print("PBR FAT info:  ")
-# pbr_fat = PbrFat(data)
-# pbr_fat.readFat()
-# pbr_fat.showInfo()
-# print("--------------")
-# print("MBR info:  ")
-# mbr = Mbr(data)
-# mbr.showInforOfPart()
+# def is_admin():
+#     try:
+#             return ctypes.windll.shell32.IsUserAnAdmin()
+#     except:
+#             return False
+#
+# if is_admin():
+#             boots = BootSector()
+#             data = boots.readBootSector(r"\\.\E:")
+#             print("PBR FAT info:  ")
+#             pbr_fat = PbrFat(data)
+#             pbr_fat.readFat()
+#             pbr_fat.showInfo()
+#             print("--------------")
+#             print("MBR info:  ")
+#             mbr = Mbr(data)
+#             mbr.showInforOfPart()
+#             # for v in data:
+#             #     print(hex(v), end=' ')
+# else:
+#             # Re-run the program with admin rights
+#             ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
+# input()
+
+
+boots = BootSector()
+data = boots.readBootSector(r"\\.\E:")
+print("PBR FAT info:  ")
+pbr_fat = PbrFat(data)
+pbr_fat.readFat()
+pbr_fat.showInfo()
+print("--------------")
+print("MBR info:  ")
+mbr = Mbr(data)
+mbr.showInforOfPart()
+
+
+# if __name__ == "__main__":
+#     # test pbr- fat
+#     boots = BootSector()
+#     data = boots.readBootSector(r"\\.\E:")
+#     print("PBR FAT info:  ")
+#     pbr_fat = PbrFat(data)
+#     pbr_fat.readFat()
+#     pbr_fat.showInfo()
+#     print("--------------")
+#     print("MBR info:  ")
+#     mbr = Mbr(data)
+#     mbr.showInforOfPart()
 
 
 
