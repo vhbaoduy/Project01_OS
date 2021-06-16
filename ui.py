@@ -1,3 +1,5 @@
+from boot_sector_fat32 import Mbr, BootSector, PartitionEntry, PartitionTable, PbrFat
+from partition_boot_sector_ntfs import RawStruct, BootSector, Bpb
 import tkinter
 import tkinter as tk
 from tkinter import Tk, Text, TOP, BOTH, X, N, LEFT
@@ -5,6 +7,7 @@ from tkinter import Frame, Label, Entry
 from tkinter import ttk
 from PIL import Image, ImageTk
 import win32api
+import win32file
 
 # drives = win32api.GetLogicalDriveStrings()
 # drives = drives.split('\000') [:-1]
@@ -59,15 +62,9 @@ class Example(Frame):
         label.image = icon
         label.pack()
 
-    def onClick(self,drive,tab2):
-        frame1 = Frame(tab2)
-        frame1.pack(fill=X)
-
-        label1 = Label(frame1, text= drive, font=("Georgia", 10))
-        label1.grid(column=2, row=5, padx=10, pady=25)
-
     def onClick(self,selected_drive):
         print(selected_drive.get())
+        print(win32api.GetVolumeInformation(selected_drive.get())[4])
 
     def callback(self,eventObject):
         # you can also get the value off the eventObject
@@ -84,6 +81,8 @@ class Example(Frame):
 
         drives = win32api.GetLogicalDriveStrings()
         drives = drives.split('\000')[:-1]
+        for drive in drives:
+            print(win32api.GetVolumeInformation(drive)[4])
 
         selected_drive = tkinter.StringVar()
         combobox = ttk.Combobox(frame1, textvariable = selected_drive)

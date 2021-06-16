@@ -1,4 +1,5 @@
 import struct
+from boot_sector_fat32 import Mbr
 BPB_SIZE = 25
 BPB_OFFSET = 0x0B
 EXTENDED_BPB_SIZE = 48
@@ -76,3 +77,7 @@ class Bpb(RawStruct):
 
 boots = BootSector(None, 0, 512, r"\\.\E:")
 boots.show_infor()
+print("--------------")
+print("MBR info:  ")
+mbr = Mbr(boots)
+mbr.showInforOfPart()
