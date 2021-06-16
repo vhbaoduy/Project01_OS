@@ -64,7 +64,7 @@ class PartitionTable:
 
 
 class Mbr():
-    def __init__(self,bootSectorData):
+    def __init__(self, data):
         self.BootCode = data[:440]
         self.DiskSig = int.from_bytes(data[440:444],byteorder='little')
         self.Unused = data[444:446]
@@ -144,18 +144,18 @@ class PbrFat():
         print("Loại FAT: ", self.BS_FileSysType)
 
 
-
-# test pbr- fat
-boots = BootSector()
-data = boots.readBootSector(r"\\.\E:")
-print("PBR FAT info:  ")
-pbr_fat = PbrFat(data)
-pbr_fat.readFat()
-pbr_fat.showInfo()
-print("--------------")
-print("MBR info:  ")
-mbr = Mbr(data)
-mbr.showInforOfPart()
+if __name__ == "__main__":
+    # test pbr- fat
+    boots = BootSector()
+    data = boots.readBootSector(r"\\.\E:")
+    print("PBR FAT info:  ")
+    pbr_fat = PbrFat(data)
+    pbr_fat.readFat()
+    pbr_fat.showInfo()
+    print("--------------")
+    print("MBR info:  ")
+    mbr = Mbr(data)
+    mbr.showInforOfPart()
 
 
 
