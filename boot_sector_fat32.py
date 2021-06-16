@@ -1,4 +1,5 @@
 import os
+import ctypes, sys
 class BootSector():
     def __init__(self):
         self.data = None
@@ -61,7 +62,6 @@ class PartitionTable:
             print("Partition ",i)
             self.Partitions[i].showInfor()
             print("--------------------------------")
-
 
 class Mbr():
     def __init__(self,bootSectorData):
@@ -144,18 +144,43 @@ class PbrFat():
         print("Loại FAT: ", self.BS_FileSysType)
 
 
+def is_admin():
+    try:
+            return ctypes.windll.shell32.IsUserAnAdmin()
+    except:
+            return False
+# sửa gì đi mẹ cái của t r :)
+# loz t đang làm cái xuất ra ui mà t định test chọn ổ đĩa rồi xuất consolve trc mà nó lỗi ý là cái của m ấy
+if is_admin():
+            boots = BootSector()
+            data = boots.readBootSector(r"\\.\E:")
+            print("PBR FAT info:  ")
+            pbr_fat = PbrFat(data)
+            pbr_fat.readFat()
+            pbr_fat.showInfo()
+            print("--------------")
+            print("MBR info:  ")
+            mbr = Mbr(data)
+            mbr.showInforOfPart()
+            # for v in data:
+            #     print(hex(v), end=' ')
+else:
+            # Re-run the program with admin rights
+            ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
+input()
 
-# test pbr- fat
-boots = BootSector()
-data = boots.readBootSector(r"\\.\E:")
-print("PBR FAT info:  ")
-pbr_fat = PbrFat(data)
-pbr_fat.readFat()
-pbr_fat.showInfo()
-print("--------------")
-print("MBR info:  ")
-mbr = Mbr(data)
-mbr.showInforOfPart()
+#từ t qua máy t test cai
+# boots = BootSector()
+# data = boots.readBootSector(r"\\.\E:")
+# print("PBR FAT info:  ")
+# pbr_fat = PbrFat(data)
+# pbr_fat.readFat()
+# pbr_fat.showInfo()
+# print("--------------")
+# print("MBR info:  ")
+# mbr = Mbr(data)
+# mbr.showInforOfPart()
+
 
 
 
