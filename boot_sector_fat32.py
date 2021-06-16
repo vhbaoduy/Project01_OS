@@ -1,4 +1,6 @@
 import os
+import time
+from mbr import *
 import ctypes, sys
 class BootSector():
     def __init__(self):
@@ -8,71 +10,7 @@ class BootSector():
             fp.seek(sector_no * 512)
             self.data = fp.read(512)
         return self.data
-class PartitionEntry():
-    def __init__(self,data):
-        self.active = hex(int.from_bytes(data[0:1],byteorder = 'little'))
-        self.startHead = int.from_bytes(data[1:2],byteorder='little')
 
-        #decode
-        temp = int.from_bytes(data[2:3],byteorder='little')
-        self.startSector = temp & 0x3F
-        self.startCylinder =   (((temp & 0XC0) >>6) <<8) + int.from_bytes(data[3:4],byteorder='little')
-
-        self.type = hex(int.from_bytes(data[4:5],byteorder = 'little'))
-        self.endHead = int.from_bytes(data[5:6],byteorder='little')
-
-        #m để cho t pull code thằng Sĩ cái conflict quá trời nè
-        temp = int.from_bytes(data[6:7], byteorder='little')
-        self.endSector = temp & 0x3F
-        self.endCylinder =  (((temp & 0XC0) >> 6) << 8) +int.from_bytes(data[7:8], byteorder='little')
-        self.LBA = int.from_bytes(data[8:12], byteorder='little')
-        self.numSec = int.from_bytes(data[12:16], byteorder='little')
-    # def readInfoPartition(self,data):
-    #     self.active = hex(int.from_bytes(data[0:1],byteorder = 'little'))
-    #     self.startHead = int.from_bytes(data[1:2],byteorder='little')
-    #
-    #     #decode
-    #     temp = int.from_bytes(data[2:3],byteorder='little')
-    #     self.startSector = temp & 0x3F
-    #     self.startCylinder = int.from_bytes(data[3:4],byteorder='little') + (((temp & 0XC0) >>6) <<8)
-    #
-    #     self.type = hex(int.from_bytes(data[4:5],byteorder = 'little'))
-    #     self.endHead = int.from_bytes(data[5:6],byteorder='little')
-    #
-    #     #decode
-    #     temp = int.from_bytes(data[6:7], byteorder='little')
-    #     self.endSector = temp & 0x3F
-    #     self.endCylinder = int.from_bytes(data[7:8], byteorder='little') + (((temp & 0XC0) >> 6) << 8)
-    #     self.LBA = int.from_bytes(data[8:12], byteorder='little')
-    #     self.numSec = int.from_bytes(data[12:16], byteorder='little')
-
-    def showInfor(self):
-        print("Active: ",end='')
-        print("Bootable") if self.active == 0x80 else print("Non bootable")
-        print("Start CHS: (%d,%d,%d)" % (self.startCylinder,self.startHead,self.startSector))
-        print("End CHS: (%d,%d,%d)" % (self.endCylinder, self.endHead, self.endSector))
-        print("Partition Type:", self.type)
-        print("LBA of first absolute sector: ", self.LBA)
-        print("Number of sectors in partition: ", self.numSec)
-class PartitionTable:
-    def __init__(self, data):
-        self.Partitions =[PartitionEntry(data[16*i:16*(i+1)]) for i in range (0, 4)]
-    def showInfor(self):
-        for i in range(len(self.Partitions)):
-            print("Partition ",i)
-            self.Partitions[i].showInfor()
-            print("--------------------------------")
-
-class Mbr():
-    def __init__(self, data):
-        self.DiskSig = int.from_bytes(data[440:444],byteorder='little')
-        self.Unused = data[444:446]
-        self.Partitions = PartitionTable(data[446:510])
-        self.MBRSig = hex(int.from_bytes(data[510:512],byteorder='little'))
-
-    def showInforOfPart(self):
-        self.Partitions.showInfor()
-        print(self.MBRSig)
 class PbrFat():
     #BS -- Boot Sector
     #BPB -- BIOS Parameter Block
@@ -115,7 +53,7 @@ class PbrFat():
 
     def showInfo(self):
         print("Lệnh nhảy qua vùng thông số: ", self.BS_jmpBoot)
-        print("OEM IL: ", self.BS_OEM_Name)
+        print("OEM ID: ", self.BS_OEM_Name)
         print("Số bytes trên Sector: ", self.BPB_BytesPerSec)
         print("Số Sector trên Cluster (SC): ",self.BPB_SecPerClus)
         print("Số Sector thuộc vùng BootSector(SB): ", self.BPB_RsvdSecCnt)
@@ -128,7 +66,7 @@ class PbrFat():
         print("Số lượng đầu đọc: ",self.BPB_NumHeads)
         print("Khoảng cách từ nơi mô tả vol đền đầu vol: ", self.BPB_HiddSec)
         print("Kích thước Volume(SV): ",self.BPB_TotalSec32)
-        print("Kích thước bảng FAT():",self.BPB_FATsz32 )
+        print("Kích thước bảng FAT(SF):",self.BPB_FATsz32 )
         print("----: ",self.BPB_ExtFlags)
         print("Version: ", self.BPB_FSver)
         print("Cluter bắt đầu bảng RDET(!!!!): ", self.BPB_RootStartClus)
@@ -141,61 +79,65 @@ class PbrFat():
         print("SerialNumber của Volumne: ",self.BS_VolumeID)
         print("Volume Label: ", self.BS_VolumLabel)
         print("Loại FAT: ", self.BS_FileSysType)
+    def getFatTableInfor(self):
+        fatStartSector = self.BPB_RsvdSecCnt
+        fatSectors = self.BPB_NumFATs* self.BPB_FATsz32
+        #last sector =
+        return fatStartSector,fatSectors
+    def getRootDirInfor(self):
+        fatStartSector,fatSectors = self.getFatTableInfor()
+
+        rootDirStartSector = fatStartSector + fatSectors
+        rootDirSectors = (32 * self.BPB_RootEntCnt + self.BPB_BytesPerSec - 1) / self.BPB_BytesPerSec
+        return rootDirStartSector,rootDirSectors
+
+    def getDataInfor(self):
+        rootDirStart, rootDirSectors = self.getRootDirInfor()
+        dataStartSector = rootDirStart + rootDirSectors
+        dataSectors = self.BPB_TotalSec32 - dataStartSector
+        return dataStartSector,dataSectors
+    def getSectorSize(self):
+        return self.BPB_BytesPerSec
+    def getClusterSize(self):
+        return self.BPB_BytesPerSec * self.BPB_BytesPerSec
+
+    def getEntriesPerCluster(self):
+        return self.getClusterSize() / 32
+
+
+
 
 
 
 # def is_admin():
 #     try:
-#             return ctypes.windll.shell32.IsUserAnAdmin()
+#         return ctypes.windll.shell32.IsUserAnAdmin()
 #     except:
-#             return False
+#         return False
 #
-# if is_admin():
-#             boots = BootSector()
-#             data = boots.readBootSector(r"\\.\E:")
-#             print("PBR FAT info:  ")
-#             pbr_fat = PbrFat(data)
-#             pbr_fat.readFat()
-#             pbr_fat.showInfo()
-#             print("--------------")
-#             print("MBR info:  ")
-#             mbr = Mbr(data)
-#             mbr.showInforOfPart()
-#             # for v in data:
-#             #     print(hex(v), end=' ')
-# else:
-#             # Re-run the program with admin rights
-#             ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
-# input()
-# rồi làm gì làm đi
-
-def FAT32():
-    boots = BootSector()
-    data = boots.readBootSector(r"\\.\E:")
-    print("PBR FAT info:  ")
-    pbr_fat = PbrFat(data)
-    pbr_fat.readFat()
-    pbr_fat.showInfo()
-    print("--------------")
-    print("MBR info:  ")
-    mbr = Mbr(data)
-    mbr.showInforOfPart()
-
-FAT32()
-
-# if __name__ == "__main__":
-#     # test pbr- fat
-#     boots = BootSector()
-#     data = boots.readBootSector(r"\\.\E:")
-#     print("PBR FAT info:  ")
-#     pbr_fat = PbrFat(data)
-#     pbr_fat.readFat()
-#     pbr_fat.showInfo()
-#     print("--------------")
-#     print("MBR info:  ")
-#     mbr = Mbr(data)
-#     mbr.showInforOfPart()
-
+#
+# def FAT32(data):
+#     if is_admin():
+#         print("PBR FAT info:  ")
+#         pbr_fat = PbrFat(data)
+#         # time.sleep(10)
+#         pbr_fat.readFat()
+#
+#         pbr_fat.showInfo()
+#         print("--------------")
+#         print("MBR info:  ")
+#         mbr = Mbr(data)
+#         mbr.showInforOfPart()
+#         # for v in data:
+#         #     print(hex(v), end=' ')
+#     else:
+#         # Re-run the program with admin rights
+#         ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
+#     input()
+#
+#
+# FAT32(BootSector().readBootSector(r"\\.\H:"))
+#
 
 
 
