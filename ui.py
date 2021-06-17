@@ -1,5 +1,6 @@
-from boot_sector_fat32 import FAT32
-from partition_boot_sector_ntfs import NTFS
+from boot_sector_fat32 import *
+from partition_boot_sector_ntfs import *
+from mbr import *
 import tkinter
 import tkinter as tk
 from tkinter import Tk, Text, TOP, BOTH, X, N, LEFT
@@ -62,19 +63,43 @@ class Example(Frame):
         label.image = icon
         label.pack()
 
-    def FAT32(self):
+    def FAT32(self, drive):
+        path="\\\.\\"
+        for i in range (0, len(drive)-1):
+            path += drive[i]
         FAT32()
+        # print(path)
+        # data = BootSector().readBootSector(r"\\.\E:")
+        # print("PBR FAT info:  ")
+        #
+        # pbr_fat = PbrFat(data)
+        # pbr_fat.readFat()
+        # pbr_fat.showInfo()
+        # print("--------------")
+        # print("MBR info:  ")
+        # mbr = Mbr(data)
+        # mbr.showInforOfPart()
 
-    def NTFS(self):
-        NTFS()
+    def NTFS(self,drive):
+        path = "\\\.\\"
+        for i in range(0, len(drive) - 1):
+            path += drive[i]
+        print(path)
+        boots = BootSector(None, 0, 512, path)
+        boots.show_infor()
+        print("--------------")
+        print("MBR info:  ")
+        mbr = Mbr(boots.data_boot())
+        mbr.showInforOfPart()
 
     def onClick(self,selected_drive):
-        print(selected_drive.get())
-        print(win32api.GetVolumeInformation(selected_drive.get())[4])
-        if (win32api.GetVolumeInformation(selected_drive.get())[4]=='FAT32'):
-            self.FAT32()
+        selected = selected_drive.get()
+        print(selected)
+        #print(win32api.GetVolumeInformation(selected_drive.get())[4])
+        if (win32api.GetVolumeInformation(selected)[4]=='FAT32'):
+            self.FAT32(selected)
         if (win32api.GetVolumeInformation(selected_drive.get())[4]=='NTFS'):
-            self.NTFS()
+            self.NTFS(selected)
 
     def callback(self,eventObject):
         # you can also get the value off the eventObject

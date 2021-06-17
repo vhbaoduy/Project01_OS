@@ -40,7 +40,6 @@ class PartitionEntry():
         self.type = hex(int.from_bytes(data[4:5],byteorder = 'little'))
         self.endHead = int.from_bytes(data[5:6],byteorder='little')
 
-        #m để cho t pull code thằng Sĩ cái conflict quá trời nè
         temp = int.from_bytes(data[6:7], byteorder='little')
         self.endSector = temp & 0x3F
         self.endCylinder =  (((temp & 0XC0) >> 6) << 8) +int.from_bytes(data[7:8], byteorder='little')

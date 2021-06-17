@@ -10,7 +10,7 @@ class BootSector():
             fp.seek(sector_no * 512)
             self.data = fp.read(512)
         return self.data
-
+#sai deo gi?? đợi tí
 class PbrFat():
     #BS -- Boot Sector
     #BPB -- BIOS Parameter Block
@@ -104,12 +104,27 @@ class PbrFat():
     def getEntriesPerCluster(self):
         return self.getClusterSize() / 32
 
+# path="\\\.\\E:"
+# # for i in range (0, len(drive)-1):
+# #         path += drive[i]
+# # print(path)
+#
+def FAT32():
+    data = BootSector().readBootSector(r"\\.\E:")
+    print("PBR FAT info:  ")
+
+    pbr_fat = PbrFat(data)
+    pbr_fat.readFat()
+    pbr_fat.showInfo()
+    print("--------------")
+    print("MBR info:  ")
+    mbr = Mbr(data)
+    mbr.showInforOfPart()
 
 
 
 
-
-# def is_admin():
+# def is_admin():mà ko biết sài :)) chạy cmd đi mà sao chạy cmd bằng admin đc . ?neè
 #     try:
 #         return ctypes.windll.shell32.IsUserAnAdmin()
 #     except:
