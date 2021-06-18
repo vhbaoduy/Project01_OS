@@ -1,9 +1,5 @@
 import os
-import struct
-import time
-from mbr import *
-import ctypes, sys
-from rdet_fat32 import readByte
+from directory_fat32 import *
 
 def readDataFromDisk(disk,sectorNo,numSector):
     with open(disk, 'rb') as fp:
@@ -128,13 +124,26 @@ class FatTable(object):
         self.disk = disk
         self.pbr_fat = pbrFat
         self.cluster = []
+        self.fats = []
     def readData(self):
         fatStart, fatSector = self.pbr_fat.getFatTableInfor()
         self.data = readDataFromDisk(self.disk,fatStart,fatSector)
 
+    def readFatTable(self):
+        for i in range(0,len(self.data),4):
+            fat = int.from_bytes(self.data[i:i+4],byteorder='little')
+            if fat == 0x0:
+                break
+            self.fats.append(fat)
+        for i in range(len(self.fats)):
+            print(hex(self.fats[i]), end = ' ')
     # def getNextSector(self,index):
+    def getElementOfFatTable(self,index):
+        return self.fats[index]
+    def getClusterList(self):
+        return self.fats
 
-    def getIndexOfSectorFromCluster(self,indexCluster):
+    def getFirstSectorOfCluster(self,indexCluster):
         dataStartSector = self.pbr_fat.getDataInfor()[0]
         return dataStartSector + (indexCluster - 2) * self.pbr_fat.getSectorsPerCluster()
 
@@ -142,23 +151,71 @@ class FatTable(object):
         sectorNum = self.pbr_fat.getReservedSector() + int(indexCluster*4 /self.pbr_fat.getSectorSize())
         entryOffset = (indexCluster * 4 ) % self.pbr_fat.getSectorSize()
         return sectorNum, entryOffset
-    def getNexSector(self,index):
+    def getNextSector(self,index):
         #fat32
         indexOffset = index*4
-        nextSector = readByte(self.data,indexOffset,4)
+        nextSector = int.from_bytes(self.data[indexOffset,indexOffset+4],byteorder='little')
         return nextSector
 
+    # def getDirectory(self, fileEntry):
+    #     currentCluster = fileEntry.getFirstClusterNumber()
+    #     clusterList = [currentCluster]
+    #     while(self.getNextSector(currentCluster) < 0x0FFFFFF8):
+    #         if self.getNextSector(currentCluster) == 0x0FFFFFF7:
+    #             raise Exception("Tried to read a cluster marked as bad, cluster: " + currentCluster)
+    #         currentCluster = self.getNextSector(currentCluster)
+    #         clusterList.append(currentCluster)
+    #     return RootDirector(open(self.disk,'rb'),clusterList,self.pbr_fat,fileEntry.getPath()+ fileEntry.getFileName + "/")
+    # def getRootDirectory(self):
+    #     clusterList = []
+    #     clusterCount = 0
+    #     for x in range(int(-clusterCount)+2,2):
+    #         clusterList.append(x)
+    #     return RootDirector(open(self.disk,'rb'),clusterList,self.pbr_fat,"/")
 
 
 
 if __name__ == "__main__":
-    # disk = r"\\.\H:"
-    # bootSectorData = BootSector().readBootSector(disk)
-    # pbr_fat = PbrFat(bootSectorData)
-    # pbr_fat.readFat()
+    disk = r"\\.\H:"
+    bootSectorData = BootSectorFAT32().readBootSector(disk)
+    pbr_fat = PbrFat(bootSectorData)
+    pbr_fat.readFat()
     # pbr_fat.showInfo()
-    #fat_table = FatTable(disk,pbr_fat)
-    print("...")
+    # print(pbr_fat.getDataInfor()[0])
+    data = readDataFromDisk(disk,pbr_fat.getDataInfor()[0],1)
+    for i in range(len(data)):
+        print(hex(data[i]),end=' ')
+        if (i+1) % 16 == 0:
+            print()
+    fat_table = FatTable(disk,pbr_fat)
+    fat_table.readData()
+    fat_table.readFatTable()
+
+
+    dir = Directory(open(disk, 'rb'),fat_table.getClusterList(),pbr_fat,'/')
+    dir.show()
+
+    # dir = fat_table.getRootDirectory()
+
+    # fileEntry = ShortFileNameEntry()
+    # fileEntry.readDirectoryShortEntry(data[192:192+32])
+    # out = fileEntry.stringOfOutput()
+    # print(out)
+    # fileEntry = ShortFileNameEntry()
+    # fileEntry.readDirectoryShortEntry(data[320:320 + 32])
+    # out = fileEntry.stringOfOutput()
+    # print(out)
+    # fileEntry = ShortFileNameEntry()
+    # fileEntry.readDirectoryShortEntry(data[448:448 + 32])
+    # out = fileEntry.stringOfOutput()
+    # print(out)
+    #
+    # data = readDataFromDisk(disk, 32896, 1)
+    # for i in range(len(data)):
+    #     print(hex(data[i]),end=' ')
+    #     if (i+1) % 16 == 0:
+    #         print()
+
 
 
 
