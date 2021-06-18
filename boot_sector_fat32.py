@@ -127,6 +127,8 @@ class FatTable(object):
         self.fats = []
         self.readData()
         self.readFatTable()
+
+        self.directoryTree = [self.getRootDirectory()]
     def readData(self):
         fatStart, fatSector = self.pbr_fat.getFatTableInfor()
         self.data = readDataFromDisk(self.disk,fatStart,fatSector)
@@ -159,13 +161,29 @@ class FatTable(object):
 
     def getRootDirectory(self):
         return Directory(open(self.disk,'rb'),self.fats,self.pbr_fat,self.disk+"/")
+    def getDirectory(self,rootDirectory):
+        dirEntries = rootDirectory.getDirectoryEntries()
+        if len(dirEntries) > 0:
+            for entry in dirEntries:
+                dir = Directory(open(self.disk,'rb'),self.fats,self.pbr_fat,entry.getPath(),entry.getFirstStartSector())
+                self.directoryTree.append(dir)
+                self.getDirectory(dir)
 
+    def getNumberOfFoldersAndFiles(self):
+        folder,file = 0,0
+        for v in self.directoryTree:
+            folder += len(v.getDirectoryEntries())
+            file += len(v.getArchiveFileEntries())
+        return folder,file
 
+    def show(self):
+        for v in self.directoryTree:
+            v.show()
 
 
 
 if __name__ == "__main__":
-    disk = r"\\.\E:"
+    disk = r"\\.\H:"
     bootSectorData = BootSectorFAT32().readBootSector(disk)
     pbr_fat = PbrFat(bootSectorData)
     pbr_fat.readFat()
@@ -178,7 +196,11 @@ if __name__ == "__main__":
     #         print()
     fat_table = FatTable(disk,pbr_fat)
     dir = fat_table.getRootDirectory()
-    dir.show()
+
+    fat_table.getDirectory(dir)
+    print("(nFolders,nFiles):  ",fat_table.getNumberOfFoldersAndFiles())
+    fat_table.show()
+
 
 
 

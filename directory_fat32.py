@@ -3,7 +3,7 @@ from file_entry_fat32 import *
 import struct
 import sys
 class Directory(object):
-    def __init__(self,file,clusterList,pbrFat,path):
+    def __init__(self,file,clusterList,pbrFat,path,startSector = None):
         # pointer in file
         self.inputFile = file
         # pbr - fat
@@ -12,7 +12,10 @@ class Directory(object):
 
         # data area
         self.dataStartSector, dummy = self.pbrFat.getDataInfor()
-        self.dataOffset =  self.dataStartSector* self.pbrFat.getSectorSize()
+        if startSector == None:
+            self.dataOffset =  self.dataStartSector* self.pbrFat.getSectorSize()
+        else:
+            self.dataOffset = startSector*self.pbrFat.getSectorSize()
 
         #file entry
         self.entries = []
@@ -33,8 +36,10 @@ class Directory(object):
                 fileEntry.setOccupiedNumberCluster(self.getNumberOfClusterFileEntry(firstCluster))
                 fileEntry.setFirstStartSector(self.getFirstStartSector(firstCluster))
                 fileEntry.setLastSector(self.getLastSector(fileEntry))
+
+            if not self.isSubDirectory(index):
+                self.entries.append(fileEntry)
             index += fileEntry.getEntryCount()
-            self.entries.append(fileEntry)
 
     def getDirectoryAndFileEntries(self):
         entries = []
@@ -46,6 +51,12 @@ class Directory(object):
         entries = []
         for entry in self.entries:
             if entry.getAttribute() == DIRECTORY and not entry.isDeletedEntry():
+                entries.append(entry)
+        return entries
+    def getArchiveFileEntries(self):
+        entries = []
+        for entry in self.entries:
+            if entry.getAttribute() == ARCHIVE and not entry.isDeletedEntry():
                 entries.append(entry)
         return entries
     def getOffsetOfEntry(self, index):
@@ -77,7 +88,9 @@ class Directory(object):
     def isDeletedEntry(self, index):
         self.inputFile.seek(self.getOffsetOfEntry(index))
         return struct.unpack_from("<B", self.inputFile.read(1))[0] == 0xE5
-
+    def isSubDirectory(self,index):
+        self.inputFile.seek(self.getOffsetOfEntry(index))
+        return struct.unpack_from("<B", self.inputFile.read(1))[0] == 0x2e or struct.unpack_from("<I", self.inputFile.read(4))[0] == 0x2e2e
     def getEntry(self, index):
         if self.isLongFileName(index):
             offset = self.getOffsetOfEntry(index)
