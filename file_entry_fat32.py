@@ -36,12 +36,15 @@ class LongFileNameEntry():
     def readDirectionLongEntry(self,data):
         self.order = int.from_bytes(data[0x00:0x0+1],byteorder='little')
         self.name1 = data[0x01:0x01+10]
+        # self.name1 = bin(int.from_bytes(data[0x01:0x01+10],byteorder='little'))
         self.attribute = int.from_bytes(data[0x0b:0x0b+1],byteorder='little')
         self.type = int.from_bytes(data[0x0c:0x0c+1],byteorder='little')
         self.checkSum = int.from_bytes(data[0x0d:0x0d+1],byteorder='little')
         self.name2 = data[0x0e:0x0e+12]
+        # self.name2 = bin(int.from_bytes(data[0x0e:0x0e + 12], byteorder='little'))
         self.fstClusLO = int.from_bytes(data[0x1a:0x1a+2],byteorder='little')
         self.name3 = data[0x1c:0x1c+4]
+        # self.name1 = bin(int.from_bytes(data[0x1c:0x1c + 4], byteorder='little'))
 
     def getFileName(self):
         return self.name1 + self.name2 + self.name3
@@ -54,7 +57,7 @@ class LongFileNameEntry():
         filename = ""
         firstChars = self.name1
         secondChars = self.name2
-        thirdChars = self.name1
+        thirdChars = self.name3
         for i in range(0, len(firstChars) - 1, 2):
             if firstChars[i] != 0xff and firstChars[i] != 0x00:
                 filename += chr(int(firstChars[i]))
@@ -79,24 +82,50 @@ class ShortFileNameEntry():
 
         self.isDeleted = None
         self.firstStartSector = None
+        self.lastSector = None
         self.numCluster = None
+        # lenght of data = 32byte ~ 1 entry
+
+    def readDirectoryShortEntry(self, data):
+        if self.isDeleted:
+            self.shortFileName = readByte(data, 0x01, 7).decode('utf-8')
+        else:
+            self.shortFileName = readByte(data, 0x00, 8).decode('utf-8')
+
+        self.shortExtension = readByte(data, 0x08, 3).decode('utf-8')
+        self.attribute = int.from_bytes(data[0x0b:0x0b + 1], byteorder='little')
+        self.reserved = int.from_bytes(data[0x0c:0x0c + 1], byteorder='little')
+        creationTenthOfSeconds = int.from_bytes(data[0x0d:0x0d + 1], byteorder='little')
+        creationTime = int.from_bytes(data[0x0e:0x0e + 2], byteorder='little')
+        creationDate = int.from_bytes(data[0x10:0x10 + 2], byteorder='little')
+        accessedDate = int.from_bytes(data[0x12:0x12 + 2], byteorder='little')
+        self.highWordStartCluster = int.from_bytes(data[0x14:0x14 + 2], byteorder='little')
+        modificationTime = int.from_bytes(data[0x16:0x16 + 2], byteorder='little')
+        modificationDate = int.from_bytes(data[0x18:0x18 + 2], byteorder='little')
+        self.lowWordStartCluster = int.from_bytes(data[0x1a:0x1a + 2], byteorder='little')
+        self.fileSize = int.from_bytes(data[0x1c:0x1c + 4], byteorder='little')
+
+        # format
+        self.firstClusterNumber = self.highWordStartCluster << 16 | self.lowWordStartCluster
+        self.setCreationDateTime(getDateTimeFromDosTime(creationDate, creationTime, creationTenthOfSeconds))
+        self.setAccessedDateTime(getDateTimeFromDosTime(accessedDate, 0, 0))
+        self.setModifiedDateTime(getDateTimeFromDosTime(modificationDate, modificationTime, 0))
 
     def isDirectoryEntry(self):
         return self.attribute == DIRECTORY
     def isFileEntry(self):
         return self.attribute == ARCHIVE
+    def isDeletedEntry(self):
+        return self.isDeleted
     def addToLongFileName(self,fileName):
         self.longFileName += fileName
     def addEntryCount(self):
         self.entryCount+=1
-    def getEntryCount(self):
-        return self.entryCount
     def setId(self,id):
         self.id = id
     def setPath(self,path):
         self.path = path
-    def getPath(self):
-        return self.path
+
     def setShortFileName(self,shortFileName):
         self.shortFileName = shortFileName
     def setShortExtension(self,extension):
@@ -105,10 +134,44 @@ class ShortFileNameEntry():
         self.attribute = attribute
     def setDeletedEntry(self,deletedEntry):
         self.isDeleted = deletedEntry
+
+    def setOccupiedNumberCluster(self,num):
+        self.numCluster = num
+    def setCreationDateTime(self,creationTime):
+        self.creationTime = creationTime
+    def setAccessedDateTime(self,accessedTime):
+        self.accessedTime = accessedTime
+    def setModifiedDateTime(self,modificationTime):
+        self.modificationTime = modificationTime
+    def setFileSize(self,fileSize):
+        self.fileSize = fileSize
+    def setFirstClusterStart(self,firstCluster):
+        self.firstClusterNumber = firstCluster
+    def setFirstStartSector(self,startSector):
+        self.firstStartSector = startSector
+
+    def setLastSector(self, lastSector):
+        self.lastSector = lastSector
+
+
+    def getPath(self):
+        return self.path
+    def getAttribute(self):
+        return self.attribute
+    def getFirstStartSector(self):
+        return self.firstStartSector
+    def getLastSector(self):
+        return self.lastSector
+    def getOccupiedNumberCluster(self):
+        return self.numCluster
     def getShortFileName(self):
         return self.shortFileName.strip()
     def getShortExtension(self):
         return self.shortExtension.strip()
+    def getEntryCount(self):
+        return self.entryCount
+    def getFirstClusterNumber(self):
+        return self.firstClusterNumber
     def getFullShortName(self):
         if len(self.getShortExtension()) >0:
             return self.getShortFileName() + '.' + self.getShortExtension()
@@ -119,49 +182,15 @@ class ShortFileNameEntry():
             return self.longFileName
         else:
             return self.getFullShortName()
-    def setCreationDateTime(self,creationTime):
-        self.creationTime = creationTime
-    def setAccessedDateTime(self,accessedTime):
-        self.accessedTime = accessedTime
-    def setModifiedDateTime(self,modificationTime):
-        self.modificationTime = modificationTime
-    def setFileSize(self,fileSize):
-        self.fileSize = fileSize
-    def setFirstClusterStart(self,firstCluster):
-        self.firstCluster = firstCluster
 
-    # lenght of data = 32byte ~ 1 entry
-    def readDirectoryShortEntry(self,data):
-        if self.isDeleted:
-            self.shortFileName = readByte(data, 0x01, 7).decode('utf-8')
-        else:
-            self.shortFileName = readByte(data,0x00,8).decode('utf-8')
-        self.shortExtension = readByte(data,0x08,3).decode('utf-8')
-        self.attribute = int.from_bytes(data[0x0b:0x0b+1],byteorder='little')
-        self.reserved = int.from_bytes(data[0x0c:0x0c+1],byteorder='little')
-        creationTenthOfSeconds = int.from_bytes(data[0x0d:0x0d+1],byteorder='little')
-        creationTime = int.from_bytes(data[0x0e:0x0e + 2], byteorder='little')
-        creationDate = int.from_bytes(data[0x10:0x10+2],byteorder='little')
-        accessedDate   = int.from_bytes(data[0x12:0x12+2],byteorder='little')
-        self.highWordStartCluster = int.from_bytes(data[0x14:0x14+2],byteorder='little')
-        modificationTime = int.from_bytes(data[0x16:0x16+2],byteorder='little')
-        modificationDate = int.from_bytes(data[0x18:0x18+2],byteorder='little')
-        self.lowWordStartCluster = int.from_bytes(data[0x1a:0x1a+2],byteorder='little')
-        self.fileSize = int.from_bytes(data[0x1c:0x1c+4],byteorder='little')
-
-        #format
-        self.firstClusterNumber = self.highWordStartCluster << 16 | self.lowWordStartCluster
-        self.setCreationDateTime(getDateTimeFromDosTime(creationDate, creationTime, creationTenthOfSeconds))
-        self.setAccessedDateTime(getDateTimeFromDosTime(accessedDate, 0, 0))
-        self.setModifiedDateTime(getDateTimeFromDosTime(modificationDate, modificationTime, 0))
-    def getFirstClusterNumber(self):
-        return self.firstClusterNumber
-
+    def getFirstSectorStart(self, startSector):
+        return self.firstStartSector
     def stringOfOutput(self):
         output = "-----------------"
-        # output += "\nPath: " + self.path
-        # output += "\nLong filename: " + self.longFilename
-        output += "\nShort filename: " + self.getFullShortName()
+        output += "\nPath: " + self.path
+        output += "\nOffset Entry in Data Area: " + str(self.id)
+        # output += "\nLong filename: " + self.longFileName
+        output += "\nShort filename: " + self.getFileName()
         if (self.attribute == READ_ONLY):
             output += "\n*READ ONLY*"
         if (self.attribute == HIDDEN_FILE):
@@ -180,8 +209,10 @@ class ShortFileNameEntry():
         output += "\nLast Accessed time: " + self.accessedTime.strftime('%d.%m.%Y')
         output += "\nModification time: " + self.modificationTime.strftime('%d.%m.%Y %H:%M:%S')
         output += "\nFirst cluster: " + str(self.firstClusterNumber)
+        output+= "\nNum cluster:" + str(self.numCluster)
         output += "\nFilesize: " + str(self.fileSize)
         output += "\nEntry count: " + str(self.entryCount)
+        output+= "\nStart Sector - End Sector: " + str(self.firstStartSector) + " - " + str(self.lastSector)
         return output
 
 
