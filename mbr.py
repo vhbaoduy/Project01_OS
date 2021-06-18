@@ -1,12 +1,20 @@
 import struct
 class RawStruct(object):
     def __init__(self, data=None, offset=None, length=None, filename=None):
+        if offset is None:
+            offset = 0
         if data is not None:
-            self.data = data[offset:offset+length]
+            if length is None:
+                self.data = data[offset:]
+            else:
+                self.data = data[offset:offset + length]
         elif filename is not None:
-            with open(filename, 'rb') as fp:
-                fp.seek(offset)
-                self.data = fp.read(length)
+            with open(filename, 'rb') as f:
+                f.seek(offset)
+                if length is None:
+                    self.data = f.read()
+                else:
+                    self.data = f.read(length)
     def data(self):
         return self.data
     def size(self):

@@ -1,14 +1,20 @@
 from mbr import *
+from mft_attribute_ntfs import *
 BPB_SIZE = 25
 BPB_OFFSET = 0x0B
 EXTENDED_BPB_SIZE = 48
-
-class BootSector(RawStruct):
+HEADER_SIZE=42
+class BootSectorNTFS(RawStruct):
     def __init__(self, data=None, offset=None, length=None, filename=None):
         RawStruct.__init__(self, data=data, offset=offset, length=length, filename=filename)
         self.oem_id = self.get_string(3, 8)
         self.bpb = Bpb(self.get_chunk(BPB_OFFSET, BPB_SIZE + EXTENDED_BPB_SIZE), 0)
         self.data=self.data
+        self.mft_offset=self.bpb.mft_offset()
+        self.mft_mirror_offet=self.bpb.mft_mirror_offset()
+        self.mft_record_size=self.bpb.mft_record_size()
+        # print(self.mft_record_size)
+        # print(self.mft_offset)
     def data_boot(self):
         return self.data
     def show_infor(self):
@@ -50,31 +56,137 @@ class Bpb(RawStruct):
         print("Volume Serial Number:", self.volume_serial)
         print("Checksum:", self.checksum)
 
-# class MFT(object):
-#     def __init__(self, entry_size=1024, offset=None, filename=None):
-#         self.offset=offset
-#         self.entry_size=entry_size
-#         self.filename=filename
-#         self.entries={}
-#     def get_entry(self,entry_id):
-#         if entry_id in self.entries:
-#             return self.entries[entry_id]
-#         else:
-#             entry_offset=entry_id*self.entry_size
-#             # entry=MFTEntry(self.filename,self.offset+entry_offset,self.entry_size,entry_size)
-#             # self.entries[entry_id]=entry
-#             # return entry
-#
-#     def preload_entries(self, count):
-#         for n in range(0, count):
-#             self.get_entry(n)
-#     def __str__(self):
-#         result = ""
-#         for entry_id in self.entries:
-#             result += str(self.entries[entry_id]) + "\n\n"
-#         return result
+    def mft_record_size(self):
+        if (self.clusters_per_mft < 0):
+            return 2 ** abs(self.clusters_per_mft)
+        else:
+            return self.clusters_per_mft * self.sectors_per_cluster * self.bytes_per_sector
+    def mft_offset(self):
+        return self.bytes_per_sector * self.sectors_per_cluster * self.mft_cluster
+
+    def mft_mirror_offset(self):
+        return self.bytes_per_sector * self.sectors_per_cluster * self.mft_mirror_cluster
+
+class MFT(object):
+    def __init__(self, entry_size=1024, offset=None, filename=None):
+        self.offset=offset
+        self.entry_size=entry_size
+        self.filename=filename
+        self.entries={}
+    def get_entry(self,entry_id):
+        if entry_id in self.entries:
+            return self.entries[entry_id]
+        else:
+            entry_offset = entry_id * self.entry_size
+            # load entry
+            entry = MFTEntry(filename=self.filename,offset=self.offset + entry_offset,length=self.entry_size,index=entry_id)
+            # cache entry
+            self.entries[entry_id] = entry
+            return entry
+
+    def preload_entries(self, count):
+        for n in range(0, count):
+            self.get_entry(n)
+    def __str__(self):
+        result = ""
+        for entry_id in self.entries:
+            result += str(self.entries[entry_id]) + "\n\n"
+        return result
+
+class MFTEntryHeader(RawStruct):
+    def __init__(self,data):
+        RawStruct.__init__(self,data)
+        self.file_signature=self.get_string(0,4)
+        self.update_seq_offset=self.get_ushort(4)
+        self.update_seq_size=self.get_ushort(6)
+        self.LogFile_seq_number=self.get_ulonglong(8)
+        self.seq_number=self.get_ushort(16)
+        self.hardlink_count=self.get_ushort(18)
+        self.first_attr_offset=self.get_ushort(20)
+        self.flags=self.get_ushort(22)
+        self.used_size=self.get_uint(24)
+        self.allocated_size=self.get_uint(28)
+        self.file_ref_to_baseFile=self.get_ulonglong(32)
+        self.next_attr=self.get_ushort(40)
+
+class MFTEntry(RawStruct):
+    def __init__(self, data=None, offset=None, length=None, filename=None, index=None):
+        RawStruct.__init__(self, data=data, filename=filename, offset=offset, length=length)
+        self.index=index
+        self.attributes=[]
+        self.fname_str=""
+        self.header=MFTEntryHeader(self.get_chunk(0, HEADER_SIZE))
+        self.name_str=self.get_entry_name(self.index)
+        self.load_attributes()
+
+
+    def get_entry_name(self, index):
+        names = {
+            0: "Master File Table",
+            1: "Master File Table Mirror",
+            2: "Log File",
+            3: "Volume File",
+            4: "Attribute Definition Table",
+            5: "Root Directory",
+            6: "Volume Bitmap",
+            7: "Boot Sector",
+            8: "Bad Cluster List",
+            9: "Security",
+            10: "Upcase Table",
+            11: "Extend Table",
+        }
+        return names.get(index, "(unknown/unnamed)")
+
+    def is_directory(self):
+        return self.header.flags & 0x0002
+
+    def is_file(self):
+        return not self.is_directory
+
+    def is_in_use(self):
+        return self.header.flags & 0x0001
+
+    def used_size(self):
+        return self.header.used_size
+
+    def get_attribute(self, offset):
+        attr_type = self.get_uint(offset)
+        length = self.get_uint(offset + 0x04)
+        data = self.get_chunk(offset, length)
+        return MFTAttr.factory(attr_type, data)
+
+    def lookup_attribute(self, attr_type_id):
+        for attr in self.attributes:
+            if attr.header.type == attr_type_id:
+                return attr
+        return None
+
+    def load_attributes(self):
+        free_space = self.size() - HEADER_SIZE
+        offset= self.header.first_attr_offset
+        while free_space > 0:
+            attr = self.get_attribute(offset)
+
+            if (attr is not None):
+                if attr.header.type == MFT_ATTR_FILENAME:
+                    self.fname_str = attr.fname
+
+                self.attributes.append(attr)
+                free_space = free_space - attr.header.length
+                offset = offset + attr.header.length
+            else:
+                break
+
+    def __str__(self):
+        result = ("File: %d\n%s (%s)" % (self.index, self.name_str, self.fname_str))
+
+        for attr in self.attributes:
+            result = result + "\n\t" + str(attr)
+        return result
+
+
 def NTFS():
-    boots = BootSector(None, 0, 512, r"\\.\E:")
+    boots = BootSectorNTFS(None, 0, 512, r"\\.\E:")
     boots.show_infor()
     print("--------------")
     print("MBR info:  ")
@@ -82,10 +194,13 @@ def NTFS():
     mbr.showInforOfPart()
 
 if __name__ == "__main__":
-    boots = BootSector(None, 0, 512, r"\\.\E:")
-    boots.show_infor()
-    print("--------------")
-    print("MBR info:  ")
-    mbr = Mbr(boots.data_boot())
-    mbr.showInforOfPart()
+    boots = BootSectorNTFS(None, 0, 512, r"\\.\E:")
+    #boots.show_infor()
+
+    MFTable=MFT(filename=r"\\.\E:",offset=boots.mft_offset)
+    MFTable.preload_entries(1)
+    # print("--------------")
+    # print("MBR info:  ")
+    # mbr = Mbr(boots.data_boot())
+    # mbr.showInforOfPart()
 
