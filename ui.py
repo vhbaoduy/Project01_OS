@@ -2,7 +2,7 @@ from boot_sector_fat32 import *
 from partition_boot_sector_ntfs import *
 from mbr import *
 import tkinter
-import tkinter as tk
+from tkinter import *
 from tkinter import Tk, Text, TOP, BOTH, X, N, LEFT
 from tkinter import Frame, Label, Entry
 from tkinter import ttk
@@ -25,44 +25,44 @@ class App(Frame):
 
     def Tab1(self, tab1):
 
-        frame1 = Frame(tab1)
+        frame1 = Frame(tab1, bg="#fffbe6")
         frame1.pack(fill=X)
 
-        txt1 = Label(frame1, text='UNIVERSITY OF SCIENCE', font=("Georgia", 14, 'bold'))
+        txt1 = Label(frame1, text='UNIVERSITY OF SCIENCE', font=("Georgia", 14, 'bold'), bg="#fffbe6")
         txt1.pack(anchor = N, padx=5, pady=3)
 
-        frame2 = Frame(tab1)
+        frame2 = Frame(tab1, bg="#fffbe6")
         frame2.pack(fill=X)
 
-        txt2 = Label(frame2, text="FACULTY OF INFORMATION TECHNOLOGY", font=("Georgia", 12, 'bold'))
+        txt2 = Label(frame2, text="FACULTY OF INFORMATION TECHNOLOGY", font=("Georgia", 12, 'bold'), bg="#fffbe6")
         txt2.pack(anchor=N, padx=5, pady=10)
 
-        symbol = Label(frame2, text=" ~~~ ", font=("Georgia", 12))
+        symbol = Label(frame2, text=" ~~~ ", font=("Georgia", 12), bg="#fffbe6")
         symbol.pack(anchor=N, padx=5)
 
-        txt3 = Label(frame2, text="OPERATING SYSTEM", font=("Georgia", 12))
+        txt3 = Label(frame2, text="OPERATING SYSTEM", font=("Georgia", 12), bg="#fffbe6")
         txt3.pack(anchor=N, padx=5, pady=5)
 
         txt4 = Label(frame2, text="Project: Manage file system on Windows", font=("Georgia", 14, 'bold'),
-                     bg='navy', fg='white', width=34)
+                     bg='#0D4CB2', fg='white', width=34)
         txt4.pack(anchor=N, padx=5, pady=20)
 
-        txt5= Label(frame2, text="  Teacher: Lê Viết Long", font=("Georgia", 12))
+        txt5= Label(frame2, text="  Teacher: Lê Viết Long", font=("Georgia", 12), bg="#fffbe6")
         txt5.pack(anchor='w', side=LEFT, padx=5, pady=20, fill=BOTH)
 
-        frame3 = Frame(tab1)
+        frame3 = Frame(tab1, bg="#fffbe6")
         frame3.pack(fill=BOTH, expand=True)
 
         stu = "  Students:  Võ Hoàng Bảo Duy - 19127027 \n              Trần Ngọc Lam - 19127040\n      Lê Minh Sĩ - 19127064"
-        txt6 = Label(frame3, text=stu, font=("Georgia", 12))
+        txt6 = Label(frame3, text=stu, font=("Georgia", 12), bg="#fffbe6")
         txt6.pack(anchor='n', side=LEFT, padx=5, pady=20)
 
         frame3.img= Image.open("Ảnh1.png")
 
         icon = ImageTk.PhotoImage(frame3.img)
-        label = Label(frame3, image=icon)
+        label = Label(frame3, image=icon, bg="#fffbe6")
         label.image = icon
-        label.pack(anchor= 'se' )
+        label.pack(anchor='se', padx=10 )
 
     def FAT32(self, drive):
         path="\\\.\\"
@@ -110,10 +110,10 @@ class App(Frame):
         # print(dir(eventObject))
 
     def Tab2(self,tab2):
-        frame1 = Frame(tab2)
+        frame1 = Frame(tab2, bg="#fffbe6")
         frame1.pack(fill=X)
 
-        label1 = Label(frame1, text='Drive Selection', font=("Georgia", 10))
+        label1 = Label(frame1, text='Drive Selection', font=("Georgia", 10), bg="#fffbe6")
         label1.grid(column=2, row=5, padx=10, pady=25)
 
         drives = win32api.GetLogicalDriveStrings()
@@ -127,18 +127,32 @@ class App(Frame):
         combobox['state'] = 'readonly'
         combobox.grid(column=3, row=5, padx=10, pady=25)
 
-        button = tkinter.Button(frame1, text='Show', font=("Georgia", 10),
-                                activeforeground='white', activebackground='firebrick4', command=lambda: self.onClick(selected_drive))
+        button = tkinter.Button(frame1, text='Show', font=("Georgia", 10), bg="#7be37b", activeforeground='white',
+                                activebackground='firebrick4', command=lambda: self.onClick(selected_drive))
         button.grid(column=4, row=5, padx=10, pady=25)
 
     def initUI(self):
         self.parent.title("Operating System")
+        mygreen = "#d2ffd2"
+        myred = "#dd0202"
+        self.style = ttk.Style()
+        self.style.configure("TNotebook", background="green")
+
+        self.style.theme_create("yummy", parent="alt", settings={
+            "TNotebook": {"configure": {"tabmargins": [2, 5, 2, 0] }},
+            "TNotebook.Tab": {
+                "configure": {"padding": [5, 1], "background": mygreen},
+                "map": {"background": [("selected", "#fffbe6")],
+                        "expand": [("selected", [1, 1, 1, 0])]}}})
+
         self.pack(fill=BOTH, expand=True)
+        self.style.theme_use("yummy")
         tab_control = ttk.Notebook(self)
 
-        tab1 = ttk.Frame(tab_control, bg='salmon1')
-
-        tab2 = ttk.Frame(tab_control)
+        tab1 = Frame(tab_control)
+        tab1.pack()
+        tab2 = Frame(tab_control)
+        tab2.pack()
 
         tab_control.add(tab1, text="General Information")
 
@@ -151,6 +165,6 @@ class App(Frame):
 
 
 root = Tk()
-root.geometry("600x400+300+300")
+root.geometry("500x400+300+300")
 app = App(root)
 root.mainloop()
