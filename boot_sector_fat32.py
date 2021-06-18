@@ -1,8 +1,17 @@
 import os
+import struct
 import time
 from mbr import *
 import ctypes, sys
-class BootSector():
+from rdet_fat32 import readByte
+
+def readDataFromDisk(disk,sectorNo,numSector):
+    with open(disk, 'rb') as fp:
+        fp.seek(sectorNo * 512)
+        data = fp.read(numSector*512)
+    return data
+
+class BootSectorFAT32():
     def __init__(self):
         self.data = None
     def readBootSector(self,disk,sector_no = 0):
@@ -10,7 +19,7 @@ class BootSector():
             fp.seek(sector_no * 512)
             self.data = fp.read(512)
         return self.data
-#sai deo gi?? đợi tí
+
 class PbrFat():
     #BS -- Boot Sector
     #BPB -- BIOS Parameter Block
@@ -89,70 +98,67 @@ class PbrFat():
 
         rootDirStartSector = fatStartSector + fatSectors
         rootDirSectors = (32 * self.BPB_RootEntCnt + self.BPB_BytesPerSec - 1) / self.BPB_BytesPerSec
-        return rootDirStartSector,rootDirSectors
+        return rootDirStartSector,int(rootDirSectors)
 
+    def getSectorsPerCluster(self):
+        return self.BPB_SecPerClus
     def getDataInfor(self):
         rootDirStart, rootDirSectors = self.getRootDirInfor()
         dataStartSector = rootDirStart + rootDirSectors
         dataSectors = self.BPB_TotalSec32 - dataStartSector
         return dataStartSector,dataSectors
+
     def getSectorSize(self):
         return self.BPB_BytesPerSec
     def getClusterSize(self):
-        return self.BPB_BytesPerSec * self.BPB_BytesPerSec
+        return self.BPB_BytesPerSec * self.BPB_SecPerClus
 
+    ## ....
     def getEntriesPerCluster(self):
         return self.getClusterSize() / 32
+    def getNumOfCluster(self):
+        dummy, dataSectors = self.getDataInfor()
+        return dataSectors/self.getSectorsPerCluster()
+    def getReservedSector(self):
+        return self.BPB_RsvdSecCnt
 
-# path="\\\.\\E:"
-# # for i in range (0, len(drive)-1):
-# #         path += drive[i]
-# # print(path)
-#
-def FAT32():
-    data = BootSector().readBootSector(r"\\.\E:")
-    print("PBR FAT info:  ")
+class FatTable(object):
+    def __init__(self,disk,pbrFat):
+        self.data = None
+        self.disk = disk
+        self.pbr_fat = pbrFat
+        self.cluster = []
+    def readData(self):
+        fatStart, fatSector = self.pbr_fat.getFatTableInfor()
+        self.data = readDataFromDisk(self.disk,fatStart,fatSector)
 
-    pbr_fat = PbrFat(data)
-    pbr_fat.readFat()
-    pbr_fat.showInfo()
-    print("--------------")
-    print("MBR info:  ")
-    mbr = Mbr(data)
-    mbr.showInforOfPart()
+    # def getNextSector(self,index):
+
+    def getIndexOfSectorFromCluster(self,indexCluster):
+        dataStartSector = self.pbr_fat.getDataInfor()[0]
+        return dataStartSector + (indexCluster - 2) * self.pbr_fat.getSectorsPerCluster()
+
+    def getPositionEntryFromCluster(self,indexCluster):
+        sectorNum = self.pbr_fat.getReservedSector() + int(indexCluster*4 /self.pbr_fat.getSectorSize())
+        entryOffset = (indexCluster * 4 ) % self.pbr_fat.getSectorSize()
+        return sectorNum, entryOffset
+    def getNexSector(self,index):
+        #fat32
+        indexOffset = index*4
+        nextSector = readByte(self.data,indexOffset,4)
+        return nextSector
 
 
 
 
-# def is_admin():mà ko biết sài :)) chạy cmd đi mà sao chạy cmd bằng admin đc . ?neè
-#     try:
-#         return ctypes.windll.shell32.IsUserAnAdmin()
-#     except:
-#         return False
-#
-#
-# def FAT32(data):
-#     if is_admin():
-#         print("PBR FAT info:  ")
-#         pbr_fat = PbrFat(data)
-#         # time.sleep(10)
-#         pbr_fat.readFat()
-#
-#         pbr_fat.showInfo()
-#         print("--------------")
-#         print("MBR info:  ")
-#         mbr = Mbr(data)
-#         mbr.showInforOfPart()
-#         # for v in data:
-#         #     print(hex(v), end=' ')
-#     else:
-#         # Re-run the program with admin rights
-#         ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
-#     input()
-#
-#
-# FAT32(BootSector().readBootSector(r"\\.\H:"))
-#
+if __name__ == "__main__":
+    # disk = r"\\.\H:"
+    # bootSectorData = BootSector().readBootSector(disk)
+    # pbr_fat = PbrFat(bootSectorData)
+    # pbr_fat.readFat()
+    # pbr_fat.showInfo()
+    #fat_table = FatTable(disk,pbr_fat)
+    print("...")
 
 
 

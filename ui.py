@@ -67,24 +67,25 @@ class Example(Frame):
         path="\\\.\\"
         for i in range (0, len(drive)-1):
             path += drive[i]
-        FAT32()
-        # print(path)
-        # data = BootSector().readBootSector(r"\\.\E:")
-        # print("PBR FAT info:  ")
-        #
-        # pbr_fat = PbrFat(data)
-        # pbr_fat.readFat()
-        # pbr_fat.showInfo()
-        # print("--------------")
-        # print("MBR info:  ")
-        # mbr = Mbr(data)
-        # mbr.showInforOfPart()
+        #FAT32()
+        print(path)
+        data = BootSectorFAT32().readBootSector(path)
+        print("PBR FAT info:  ")
+
+        pbr_fat = PbrFat(data)
+        pbr_fat.readFat()
+        pbr_fat.showInfo()
+        print("--------------")
+        print("MBR info:  ")
+        mbr = Mbr(data)
+        mbr.showInforOfPart()
 
     def NTFS(self,drive):
         path = "\\\.\\"
         for i in range(0, len(drive) - 1):
             path += drive[i]
         print(path)
+
         boots = BootSector(None, 0, 512, path)
         boots.show_infor()
         print("--------------")
@@ -95,7 +96,7 @@ class Example(Frame):
     def onClick(self,selected_drive):
         selected = selected_drive.get()
         print(selected)
-        #print(win32api.GetVolumeInformation(selected_drive.get())[4])
+        # print(win32api.GetVolumeInformation(selected_drive.get())[4])
         if (win32api.GetVolumeInformation(selected)[4]=='FAT32'):
             self.FAT32(selected)
         if (win32api.GetVolumeInformation(selected_drive.get())[4]=='NTFS'):
@@ -116,8 +117,8 @@ class Example(Frame):
 
         drives = win32api.GetLogicalDriveStrings()
         drives = drives.split('\000')[:-1]
-        for drive in drives:
-            print(win32api.GetVolumeInformation(drive)[4])
+        # for drive in drives:
+        #     print(win32api.GetVolumeInformation(drive)[4])
 
         selected_drive = tkinter.StringVar()
         combobox = ttk.Combobox(frame1, textvariable = selected_drive)
