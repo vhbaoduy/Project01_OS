@@ -19,7 +19,7 @@ class BootSectorNTFS(RawStruct):
         return self.data
     def show_infor(self):
         print("OEM ID:", self.oem_id)
-        self.bpb.show_infor()
+        return '\tOEM ID:  '+str(self.oem_id)+self.bpb.show_infor()
 class Bpb(RawStruct):
     def __init__(self, data=None, offset=None, filename=None):
         RawStruct.__init__(self, data=data, offset=offset, length=BPB_SIZE + EXTENDED_BPB_SIZE, filename=filename)
@@ -41,20 +41,49 @@ class Bpb(RawStruct):
         self.checksum = self.get_uint(69)
 
     def show_infor(self):
-        print("Bytes per sector:", self.bytes_per_sector)
-        print("Sectors Per Cluster:", self.sectors_per_cluster)
-        print("Reserved Sectors:", self.reserved_sectors)
-        print("Media Descriptor:", self.media_descriptor)
-        print("Sectors Per Track:", self.sectors_per_track)
-        print("Number Of Heads:", self.number_of_heads)
-        print("Hidden Sectors:", self.hidden_sectors)
-        print("Total Sectors:", self.total_sectors)
-        print("Logical Cluster Number for the file $MFT:", self.mft_cluster)
-        print("Logical Cluster Number for the file $MFTMirr:", self.mft_mirror_cluster)
-        print("Clusters Per File Record Segment:", self.clusters_per_mft)
-        print("Clusters Per Index Buffer:", self.clusters_per_index)
-        print("Volume Serial Number:", self.volume_serial)
-        print("Checksum:", self.checksum)
+        str1 = "\n\tBytes per sector:  "+str(self.bytes_per_sector)
+        # print("Bytes per sector:", self.bytes_per_sector)
+
+        str2 = '\n\tSectors Per Cluster:  '+str(self.sectors_per_cluster)
+        # print("Sectors Per Cluster:", self.sectors_per_cluster)
+
+        str3 = '\n\tReserved Sectors:  '+str(self.reserved_sectors)
+        # print("Reserved Sectors:", self.reserved_sectors)
+
+        str4 = '\n\tMedia Descriptor:  '+str(self.media_descriptor)
+        # print("Media Descriptor:", self.media_descriptor)
+
+        str5 = '\n\tSectors Per Track:  '+str(self.sectors_per_track)
+        # print("Sectors Per Track:", self.sectors_per_track)
+
+        str6 = '\n\tNumber Of Heads:  '+str(self.number_of_heads)
+        # print("Number Of Heads:", self.number_of_heads)
+
+        str7 = '\n\tHidden Sectors:  '+str(self.hidden_sectors)
+        # print("Hidden Sectors:", self.hidden_sectors)
+
+        str8 = '\n\tTotal Sectors:  '+str(self.total_sectors)
+        # print("Total Sectors:", self.total_sectors)
+
+        str9 = '\n\tLogical Cluster Number for the file $MFT:  '+str(self.mft_cluster)
+        # print("Logical Cluster Number for the file $MFT:", self.mft_cluster)
+
+        str10 = '\n\tLogical Cluster Number for the file $MFTMirr:  '+str(self.mft_mirror_cluster)
+        # print("Logical Cluster Number for the file $MFTMirr:", self.mft_mirror_cluster)
+
+        str11 = '\n\tClusters Per File Record Segment:  '+str(self.clusters_per_mft)
+        # print("Clusters Per File Record Segment:", self.clusters_per_mft)
+
+        str12 = '\n\tClusters Per Index Buffer:  '+str(self.clusters_per_index)
+        # print("Clusters Per Index Buffer:", self.clusters_per_index)
+
+        str13 = '\n\tVolume Serial Number:  '+str(self.volume_serial)
+        # print("Volume Serial Number:", self.volume_serial)
+
+        str14 = '\n\tChecksum:  '+str(self.checksum)
+        # print("Checksum:", self.checksum)
+        return str1 + str2 + str3 + str4 + str5 + str6 + str7 + str8 + str9 + str10 \
+               + str11 + str12 + str13 + str14
 
     def mft_record_size(self):
         if (self.clusters_per_mft < 0):

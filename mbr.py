@@ -63,6 +63,7 @@ class PartitionEntry():
             else:
                 return 'Invalid bootable byte'
     def showInfor(self):
+        str1='\tActive'+self.getStatus()
         print("Active: ",self.getStatus())
         print("Start CHS: (%d,%d,%d)" % (self.startCylinder,self.startHead,self.startSector))
         print("End CHS: (%d,%d,%d)" % (self.endCylinder, self.endHead, self.endSector))
@@ -74,7 +75,7 @@ class PartitionTable:
         self.Partitions =[PartitionEntry(data[16*i:16*(i+1)]) for i in range (0, 4)]
     def showInfor(self):
         for i in range(len(self.Partitions)):
-            print("Partition ",i)
+            print("Partition ", i+1)
             self.Partitions[i].showInfor()
             print("--------------------------------")
 

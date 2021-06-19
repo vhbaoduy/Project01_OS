@@ -64,22 +64,20 @@ class App(Frame):
         label.image = icon
         label.pack(anchor='se', padx=10 )
 
-    def FAT32(self, drive, tab):
+    def FAT32(self, drive, frame):
         path="\\\.\\"
         for i in range (0, len(drive)-1):
             path += drive[i]
 
-        frame1 = Frame(tab, bg="#fffbe6")
-        frame1.pack(fill=X)
-
-        label = Label(frame1, text="BIOS Parameter Block information", font=("Georgia", 10), bg="#fffbe6")
+        label = Label(frame, text="BIOS Parameter Block information", font=("Georgia", 10), bg="#fffbe6")
         label.pack(anchor=N, padx=5, pady=5)
 
         data = BootSectorFAT32().readBootSector(path)
         pbr_fat = PbrFat(data)
         pbr_fat.readFat()
         txt = pbr_fat.showInfo()
-        text = Text(frame1, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
+        text = Text(frame, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
+        text.delete('1.0', "end")
         text.insert(END, txt)
         text.pack(side=LEFT, padx=10, pady=5)
 
@@ -88,26 +86,36 @@ class App(Frame):
         mbr = Mbr(data)
         mbr.showInforOfPart()
 
-    def NTFS(self,drive):
+    def NTFS(self,drive, frame):
         path = "\\\.\\"
         for i in range(0, len(drive) - 1):
             path += drive[i]
         print(path)
 
         boots = BootSectorNTFS(None, 0, 512, path)
-        boots.show_infor()
-        print("--------------")
-        print("MBR info:  ")
-        mbr = Mbr(boots.data_boot())
-        mbr.showInforOfPart()
+        txt = boots.show_infor()
 
-    def onClick(self,selected_drive, tab):
+        label = Label(frame, text="BIOS Parameter Block information", font=("Georgia", 10), bg="#fffbe6")
+        label.pack(anchor=N, padx=5, pady=5)
+
+        text = Text(frame, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
+        text.delete('1.0', "end")
+        text.insert(END, txt)
+        text.pack(side=LEFT, padx=10, pady=5)
+
+        MFTable = MFT(filename=path, offset=boots.mft_offset)
+        MFTable.preload_entries(1)
+
+    def onClick(self,selected_drive, frame):
         selected = selected_drive.get()
         print(selected)
+        list = frame.pack_slaves()
+        for l in list:
+            l.destroy()
         if (win32api.GetVolumeInformation(selected)[4]=='FAT32'):
-            self.FAT32(selected, tab)
+            self.FAT32(selected, frame)
         if (win32api.GetVolumeInformation(selected_drive.get())[4]=='NTFS'):
-            self.NTFS(selected)
+            self.NTFS(selected, frame)
 
     def callback(self,eventObject):
          return eventObject.widget.get()
@@ -130,11 +138,18 @@ class App(Frame):
         combobox['value'] = drives
         combobox['state'] = 'readonly'
         combobox.pack(side=LEFT, padx=10, pady=25)
+        combobox.bind("<<ComboboxSelected>>", self.callback)
         # combobox.grid(column=3, row=5, padx=10, pady=25)
 
-        button = tkinter.Button(frame1, text='Show', font=("Georgia", 10), bg="#7be37b", activeforeground='white',
-                                activebackground='firebrick4', command=lambda: self.onClick(selected_drive, tab2))
+        frame2 = Frame(tab2, bg="#fffbe6")
+        frame2.pack()
+        button = tkinter.Button(frame1, text='Boot Sector', font=("Georgia", 10), bg="#7be37b", activeforeground='white',
+                                activebackground='firebrick4', command=lambda: self.onClick(selected_drive, frame2))
         button.pack(side=LEFT, padx=10, pady=25)
+
+        button1 = tkinter.Button(frame1, text='MBR / MFT', font=("Georgia", 10), bg="#7be37b", activeforeground='white',
+                                activebackground='firebrick4', command=lambda: self.onClick(selected_drive, frame2))
+        button1.pack(side=LEFT, padx=10, pady=25)
         # button.grid(column=4, row=5, padx=10, pady=25)
 
     def initUI(self):
