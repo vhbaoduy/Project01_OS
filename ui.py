@@ -64,18 +64,25 @@ class App(Frame):
         label.image = icon
         label.pack(anchor='se', padx=10 )
 
-    def FAT32(self, drive):
+    def FAT32(self, drive, tab):
         path="\\\.\\"
         for i in range (0, len(drive)-1):
             path += drive[i]
-        #FAT32()
-        print(path)
-        data = BootSectorFAT32().readBootSector(path)
-        print("PBR FAT info:  ")
 
+        frame1 = Frame(tab, bg="#fffbe6")
+        frame1.pack(fill=X)
+
+        label = Label(frame1, text="BIOS Parameter Block information", font=("Georgia", 10), bg="#fffbe6")
+        label.pack(anchor=N, padx=5, pady=5)
+
+        data = BootSectorFAT32().readBootSector(path)
         pbr_fat = PbrFat(data)
         pbr_fat.readFat()
-        pbr_fat.showInfo()
+        txt = pbr_fat.showInfo()
+        text = Text(frame1, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
+        text.insert(END, txt)
+        text.pack(side=LEFT, padx=10, pady=5)
+
         print("--------------")
         print("MBR info:  ")
         mbr = Mbr(data)
@@ -87,34 +94,31 @@ class App(Frame):
             path += drive[i]
         print(path)
 
-        boots = BootSector(None, 0, 512, path)
+        boots = BootSectorNTFS(None, 0, 512, path)
         boots.show_infor()
         print("--------------")
         print("MBR info:  ")
         mbr = Mbr(boots.data_boot())
         mbr.showInforOfPart()
 
-    def onClick(self,selected_drive):
+    def onClick(self,selected_drive, tab):
         selected = selected_drive.get()
         print(selected)
-        # print(win32api.GetVolumeInformation(selected_drive.get())[4])
         if (win32api.GetVolumeInformation(selected)[4]=='FAT32'):
-            self.FAT32(selected)
+            self.FAT32(selected, tab)
         if (win32api.GetVolumeInformation(selected_drive.get())[4]=='NTFS'):
             self.NTFS(selected)
 
     def callback(self,eventObject):
-        # you can also get the value off the eventObject
          return eventObject.widget.get()
-        # to see other information also available on the eventObject
         # print(dir(eventObject))
 
     def Tab2(self,tab2):
         frame1 = Frame(tab2, bg="#fffbe6")
-        frame1.pack(fill=X)
+        frame1.pack()
 
         label1 = Label(frame1, text='Drive Selection', font=("Georgia", 10), bg="#fffbe6")
-        label1.grid(column=2, row=5, padx=10, pady=25)
+        label1.pack(side=LEFT, padx=10, pady=25)
 
         drives = win32api.GetLogicalDriveStrings()
         drives = drives.split('\000')[:-1]
@@ -125,11 +129,13 @@ class App(Frame):
         combobox = ttk.Combobox(frame1, textvariable=selected_drive)
         combobox['value'] = drives
         combobox['state'] = 'readonly'
-        combobox.grid(column=3, row=5, padx=10, pady=25)
+        combobox.pack(side=LEFT, padx=10, pady=25)
+        # combobox.grid(column=3, row=5, padx=10, pady=25)
 
         button = tkinter.Button(frame1, text='Show', font=("Georgia", 10), bg="#7be37b", activeforeground='white',
-                                activebackground='firebrick4', command=lambda: self.onClick(selected_drive))
-        button.grid(column=4, row=5, padx=10, pady=25)
+                                activebackground='firebrick4', command=lambda: self.onClick(selected_drive, tab2))
+        button.pack(side=LEFT, padx=10, pady=25)
+        # button.grid(column=4, row=5, padx=10, pady=25)
 
     def initUI(self):
         self.parent.title("Operating System")
@@ -149,9 +155,9 @@ class App(Frame):
         self.style.theme_use("yummy")
         tab_control = ttk.Notebook(self)
 
-        tab1 = Frame(tab_control)
+        tab1 = Frame(tab_control, background="#fffbe6")
         tab1.pack()
-        tab2 = Frame(tab_control)
+        tab2 = Frame(tab_control, background="#fffbe6")
         tab2.pack()
 
         tab_control.add(tab1, text="General Information")
@@ -165,6 +171,6 @@ class App(Frame):
 
 
 root = Tk()
-root.geometry("500x400+300+300")
+root.geometry("600x400+300+200")
 app = App(root)
 root.mainloop()
