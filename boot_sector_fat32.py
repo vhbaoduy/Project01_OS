@@ -247,7 +247,7 @@ if __name__ == "__main__":
     pbr_fat.readFat()
     # pbr_fat.showInfo()
     # print(pbr_fat.getDataInfor()[0])
-    # data = readDataFromDisk(disk,pbr_fat.getDataInfor()[0],2)
+    # data = readDataFromDisk(disk,pbr_fat.getDataInfor()[0],1)
     # for i in range(len(data)):
     #     print(hex(data[i]),end=' ')
     #     if (i+1) % 16 == 0:

@@ -15,6 +15,16 @@ def getDateTimeFromDosTime(dosDate, dosTime,dosTenthOfSecond):
     return datetime.datetime(creationYear, creationMonth, creationDay, creationHour, creationMinute, creationSecond, creationMicroSecond)
 def readBitsFromByte(value, startIndex, bitCount):
     return (value & (2**startIndex -1)) >> (startIndex - bitCount)
+
+# name in long file name
+def decodeUTF8(name):
+    name = bytearray(name)
+    stringName = ""
+    for i in range(0, len(name) - 1, 2):
+        if name[i] != 0xff and name[i] != 0x00:
+            stringName += bytes(name[i]).decode('utf-8')
+    return stringName
+
 READ_ONLY = 0x01
 HIDDEN_FILE = 0x02
 SYSTEM_FILE = 0x04
@@ -35,19 +45,20 @@ class LongFileNameEntry():
 
     def readDirectionLongEntry(self,data):
         self.order = int.from_bytes(data[0x00:0x0+1],byteorder='little')
-        self.name1 = data[0x01:0x01+10]
+        self.name1 = data[0x01:0x01+10].decode('utf-16')
         # self.name1 = bin(int.from_bytes(data[0x01:0x01+10],byteorder='little'))
         self.attribute = int.from_bytes(data[0x0b:0x0b+1],byteorder='little')
         self.type = int.from_bytes(data[0x0c:0x0c+1],byteorder='little')
         self.checkSum = int.from_bytes(data[0x0d:0x0d+1],byteorder='little')
-        self.name2 = data[0x0e:0x0e+12]
+        self.name2 = data[0x0e:0x0e+12].decode('utf-16')
         # self.name2 = bin(int.from_bytes(data[0x0e:0x0e + 12], byteorder='little'))
         self.fstClusLO = int.from_bytes(data[0x1a:0x1a+2],byteorder='little')
-        self.name3 = data[0x1c:0x1c+4]
+        self.name3 = data[0x1c:0x1c+4].decode('utf-16')
         # self.name1 = bin(int.from_bytes(data[0x1c:0x1c + 4], byteorder='little'))
 
     def getFileName(self):
-        return self.name1 + self.name2 + self.name3
+        fileName = (self.name1 + self.name2 + self.name3).strip(b'\xff\xff'.decode('utf-16'))
+        return fileName[:len(fileName)-1]
     def convertToByteArray(self):
         self.name1 = bytearray(self.name1)
         self.name2 = bytearray(self.name2)

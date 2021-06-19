@@ -199,6 +199,7 @@ if __name__ == "__main__":
 
     MFTable=MFT(filename=r"\\.\E:",offset=boots.mft_offset)
     MFTable.preload_entries(1)
+
     # print("--------------")
     # print("MBR info:  ")
     # mbr = Mbr(boots.data_boot())

@@ -32,7 +32,7 @@ class Directory(object):
             else:
                 fileEntry.setPath(self.path + fileEntry.getFileName()+"/")
             firstCluster = fileEntry.getFirstClusterNumber()
-            if firstCluster > 2:
+            if firstCluster > 2 and not fileEntry.isDeletedEntry():
                 fileEntry.setOccupiedNumberCluster(self.getNumberOfClusterFileEntry(firstCluster))
                 fileEntry.setFirstStartSector(self.getFirstStartSector(firstCluster))
                 fileEntry.setLastSector(self.getLastSector(fileEntry))
@@ -105,7 +105,7 @@ class Directory(object):
                     lfnEntry.convertToByteArray()
 
                 fileEntry = self.getEntry(index + 1)
-                fileEntry.addToLongFileName(lfnEntry.getStringFromLongFilename())
+                fileEntry.addToLongFileName(lfnEntry.getFileName())
                 fileEntry.addEntryCount()
             return fileEntry
         else:
