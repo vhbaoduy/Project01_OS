@@ -53,12 +53,12 @@ class LongFileNameEntry():
         self.name2 = data[0x0e:0x0e+12].decode('utf-16')
         # self.name2 = bin(int.from_bytes(data[0x0e:0x0e + 12], byteorder='little'))
         self.fstClusLO = int.from_bytes(data[0x1a:0x1a+2],byteorder='little')
-        self.name3 = data[0x1c:0x1c+4].decode('utf-16')
+        self.name3 = data[0x1c:0x1c+4].decode('utf-16').strip(b'\xff\xff'.decode('utf-16'))
         # self.name1 = bin(int.from_bytes(data[0x1c:0x1c + 4], byteorder='little'))
 
     def getFileName(self):
         fileName = (self.name1 + self.name2 + self.name3).strip(b'\xff\xff'.decode('utf-16'))
-        return fileName[:len(fileName)-1]
+        return fileName
     def convertToByteArray(self):
         self.name1 = bytearray(self.name1)
         self.name2 = bytearray(self.name2)
@@ -137,6 +137,8 @@ class ShortFileNameEntry():
     def setPath(self,path):
         self.path = path
 
+    def setLongFileName(self,longFileName):
+        self.longFileName = longFileName
     def setShortFileName(self,shortFileName):
         self.shortFileName = shortFileName
     def setShortExtension(self,extension):
@@ -164,7 +166,8 @@ class ShortFileNameEntry():
     def setLastSector(self, lastSector):
         self.lastSector = lastSector
 
-
+    def getLongFileName(self):
+        return self.longFileName
     def getPath(self):
         return self.path
     def getAttribute(self):
