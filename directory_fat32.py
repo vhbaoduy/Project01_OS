@@ -1,14 +1,13 @@
-
 from file_entry_fat32 import *
 import struct
 import sys
 class Directory(object):
-    def __init__(self,file,clusterList,pbrFat,path,startSector = None):
+    def __init__(self,file,fatTable,pbrFat,path,startSector = None):
         # pointer in file
         self.inputFile = file
         # pbr - fat
         self.pbrFat = pbrFat
-        self.clusterList = clusterList
+        self.fatTable = fatTable
 
         # data area
         self.dataStartSector, dummy = self.pbrFat.getDataInfor()
@@ -25,13 +24,16 @@ class Directory(object):
     #     return self.clusterList[0] == 0x00
     def readAllEntry(self):
         index = 0
-        while(self.isDirectionEntry(index) and index* 32 < len(self.clusterList) * self.pbrFat.getClusterSize()):
+        while(self.isDirectionEntry(index)):
             fileEntry = self.getEntry(index)
+            #check error decode utf - 16:
+            fileEntry = self.checkErrorDecodeUTF16AtLNFEntry(fileEntry)
             if not fileEntry.isDirectoryEntry():
                 fileEntry.setPath(self.path + fileEntry.getFileName())
             else:
                 fileEntry.setPath(self.path + fileEntry.getFileName()+"/")
             firstCluster = fileEntry.getFirstClusterNumber()
+
             if firstCluster > 2 and not fileEntry.isDeletedEntry():
                 fileEntry.setOccupiedNumberCluster(self.getNumberOfClusterFileEntry(firstCluster))
                 fileEntry.setFirstStartSector(self.getFirstStartSector(firstCluster))
@@ -64,9 +66,9 @@ class Directory(object):
 
     def getNumberOfClusterFileEntry(self,firstCluster):
         counter = 1
-        while(self.clusterList[firstCluster] < 0xFFFFFF8):
+        while(self.fatTable.getValueOfCluster(firstCluster) < 0xFFFFFF8):
             counter+=1
-            firstCluster = self.clusterList[firstCluster]
+            firstCluster = self.fatTable.getValueOfCluster(firstCluster)
             if firstCluster == 0x0FFFFFF7:
                 raise Exception("Tried to read a cluster marked as bad, cluster: " + firstCluster)
         return counter
@@ -91,6 +93,13 @@ class Directory(object):
     def isSubDirectory(self,index):
         self.inputFile.seek(self.getOffsetOfEntry(index))
         return struct.unpack_from("<B", self.inputFile.read(1))[0] == 0x2e or struct.unpack_from("<I", self.inputFile.read(4))[0] == 0x2e2e
+    def checkErrorDecodeUTF16AtLNFEntry(self,fileEntry):
+        fileName = fileEntry.getLongFileName()
+        count = len(fileName)
+        if (count > 0):
+            if not fileName[-1].isalpha():
+                fileEntry.setLongFileName(fileName[0:count-1])
+        return fileEntry
     def getEntry(self, index):
         if self.isLongFileName(index):
             offset = self.getOffsetOfEntry(index)

@@ -6,7 +6,6 @@ def readDataFromDisk(disk,sectorNo,numSector):
         fp.seek(sectorNo * 512)
         data = fp.read(numSector*512)
     return data
-
 class BootSectorFAT32():
     def __init__(self):
         self.data = None
@@ -141,7 +140,6 @@ class PbrFat():
         return str1+str2+str3+str4+str5+str6+str7+str8+str9+str10 \
             +str11+str12+str13+str14+str15+str16+str17+str18+str19+str20 \
             +str21+str22+str23+str24+str25
-
     def getFatTableInfor(self):
         fatStartSector = self.BPB_RsvdSecCnt
         fatSectors = self.BPB_NumFATs* self.BPB_FATsz32
@@ -153,7 +151,6 @@ class PbrFat():
         rootDirStartSector = fatStartSector + fatSectors
         rootDirSectors = (32 * self.BPB_RootEntCnt + self.BPB_BytesPerSec - 1) / self.BPB_BytesPerSec
         return rootDirStartSector,int(rootDirSectors)
-
     def getSectorsPerCluster(self):
         return self.BPB_SecPerClus
     def getDataInfor(self):
@@ -176,7 +173,7 @@ class PbrFat():
     def getReservedSector(self):
         return self.BPB_RsvdSecCnt
 
-class FatTable(object):
+class FatTable():
     def __init__(self,disk,pbrFat):
         self.data = None
         self.disk = disk
@@ -184,46 +181,27 @@ class FatTable(object):
         self.cluster = []
         self.fats = []
         self.readData()
-        self.readFatTable()
+        # self.readFatTable()
 
         self.directoryTree = [self.getRootDirectory()]
     def readData(self):
         fatStart, fatSector = self.pbr_fat.getFatTableInfor()
         self.data = readDataFromDisk(self.disk,fatStart,fatSector)
-
-    def readFatTable(self):
-        for i in range(0,len(self.data),4):
-            fat = int.from_bytes(self.data[i:i+4],byteorder='little')
-            if fat == 0x0:
-                break
-            self.fats.append(fat)
-
-
-        for i in range(len(self.fats)):
-            print(hex(self.fats[i]), end = ' ')
-        print(len(self.fats))
-    # def getNextSector(self,index):
-    def getElementOfFatTable(self,index):
-        return self.fats[index]
+    # def readFatTable(self):
+    #     for i in range(0,len(self.data),4):
+    #         fat = int.from_bytes(self.data[i:i+4],byteorder='little')
+    #         self.fats.append(fat)
+    def getValueOfCluster(self,index):
+        return int.from_bytes(self.data[index:index+4],byteorder='little')
     def getClusterList(self):
         return self.fats
-
-    def getFirstSectorOfCluster(self,indexCluster):
-        dataStartSector = self.pbr_fat.getDataInfor()[0]
-        return dataStartSector + (indexCluster - 2) * self.pbr_fat.getSectorsPerCluster()
-
-    def getPositionEntryFromCluster(self,indexCluster):
-        sectorNum = self.pbr_fat.getReservedSector() + int(indexCluster*4 /self.pbr_fat.getSectorSize())
-        entryOffset = (indexCluster * 4 ) % self.pbr_fat.getSectorSize()
-        return sectorNum, entryOffset
-
     def getRootDirectory(self):
-        return Directory(open(self.disk,'rb'),self.fats,self.pbr_fat,self.disk+"/")
+        return Directory(open(self.disk,'rb'),self,self.pbr_fat,self.disk+"/")
     def getDirectory(self,rootDirectory):
         dirEntries = rootDirectory.getDirectoryEntries()
         if len(dirEntries) > 0:
             for entry in dirEntries:
-                dir = Directory(open(self.disk,'rb'),self.fats,self.pbr_fat,entry.getPath(),entry.getFirstStartSector())
+                dir = Directory(open(self.disk,'rb'),self,self.pbr_fat,entry.getPath(),entry.getFirstStartSector())
                 self.directoryTree.append(dir)
                 self.getDirectory(dir)
 
@@ -245,19 +223,15 @@ if __name__ == "__main__":
     bootSectorData = BootSectorFAT32().readBootSector(disk)
     pbr_fat = PbrFat(bootSectorData)
     pbr_fat.readFat()
-    # pbr_fat.showInfo()
-    # print(pbr_fat.getDataInfor()[0])
-    # data = readDataFromDisk(disk,pbr_fat.getDataInfor()[0],1)
-    # for i in range(len(data)):
-    #     print(hex(data[i]),end=' ')
-    #     if (i+1) % 16 == 0:
-    #         print()
+
     fat_table = FatTable(disk,pbr_fat)
     dir = fat_table.getRootDirectory()
 
     fat_table.getDirectory(dir)
     print("(nFolders,nFiles):  ",fat_table.getNumberOfFoldersAndFiles())
     fat_table.show()
+
+
 
 
 
