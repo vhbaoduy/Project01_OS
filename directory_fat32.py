@@ -163,6 +163,7 @@ class Directory(object):
         print(self.path)
         for entry in self.getDirectoryAndFileEntries():
             # out = entry.stringOfOutput()
+            # print(out)
             print(formatString(depth)+entry.getFileName())
 
 
