@@ -133,11 +133,10 @@ class App(Frame):
             boots = BootSectorNTFS(None, 0, 512, path)
             txt = boots.show_infor()
             text = Text(frame, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
-            text.delete('1.0', "end")
             text.insert(END, txt)
             text.pack(side=LEFT, padx=20, pady=5)
 
-    def MBR_MFT(self,selected_drive, frame):
+    def MBR(self,selected_drive, frame):
         drive = selected_drive.get()
         print(drive)
         list = frame.pack_slaves()
@@ -150,8 +149,8 @@ class App(Frame):
             for i in range(0, len(drive) - 1):
                 path += drive[i]
             data = BootSectorFAT32().readBootSector(path)
-            pbr_fat = PbrFat(data)
-            pbr_fat.readFat()
+            # pbr_fat = PbrFat(data)
+            # pbr_fat.readFat()
             mbr = Mbr(data)
             txt = mbr.showInforOfPart()
             text = Text(frame, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
@@ -163,6 +162,13 @@ class App(Frame):
             path = "\\\.\\"
             for i in range(0, len(drive) - 1):
                 path += drive[i]
+            boots = BootSectorNTFS(None, 0, 512, path)
+            # txt = boots.show_infor()
+            mbr = Mbr(boots.data_boot())
+            txt = mbr.showInforOfPart()
+            text = Text(frame, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
+            text.insert(END, txt)
+            text.pack(side=LEFT, padx=20, pady=5)
 
     def callback(self,eventObject):
          return eventObject.widget.get()
@@ -194,9 +200,13 @@ class App(Frame):
                                 activebackground='firebrick4', command=lambda: self.Boot_Sector(selected_drive, frame2))
         button.pack(side=LEFT, padx=10, pady=25)
 
-        button1 = tkinter.Button(frame1, text='MBR / MFT', font=("Georgia", 10), bg="#7be37b", activeforeground='white',
-                                activebackground='firebrick4', command=lambda: self.MBR_MFT(selected_drive, frame2))
+        button1 = tkinter.Button(frame1, text='MBR', font=("Georgia", 10), bg="#7be37b", activeforeground='white',
+                                activebackground='firebrick4', command=lambda: self.MBR(selected_drive, frame2))
         button1.pack(side=LEFT, padx=10, pady=25)
+
+        button2 = tkinter.Button(frame1, text='Directory', font=("Georgia", 10), bg="#7be37b", activeforeground='white',
+                                 activebackground='firebrick4', command=lambda: self.MBR(selected_drive, frame2))
+        button2.pack(side=LEFT, padx=10, pady=25)
         # button.grid(column=4, row=5, padx=10, pady=25)
 
     def initUI(self):

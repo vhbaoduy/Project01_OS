@@ -220,10 +220,18 @@ class FatTable():
 
 
 if __name__ == "__main__":
-    disk = r"\\.\E:"
+    disk = r"\\.\F:"
     bootSectorData = BootSectorFAT32().readBootSector(disk)
     pbr_fat = PbrFat(bootSectorData)
     pbr_fat.readFat()
+    # print(pbr_fat.showInfo())
+    # print(pbr_fat.getDataInfor())
+    # print(pbr_fat.getRootDirInfor())
+    # data = readDataFromDisk(disk,pbr_fat.getDataInfor()[0],1)
+    # for i in range(len(data)):
+    #     print(hex(data[i]),end=' ')
+    #     if (i+1) % 16 == 0:
+    #         print()
 
     fat_table = FatTable(disk,pbr_fat)
     dir = fat_table.getRootDirectory()

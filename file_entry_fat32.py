@@ -100,10 +100,13 @@ class ShortFileNameEntry():
         # lenght of data = 32byte ~ 1 entry
 
     def readDirectoryShortEntry(self, data):
-        if self.isDeleted:
-            self.shortFileName = readByte(data, 0x01, 7).decode('utf-8')
-        else:
-            self.shortFileName = readByte(data, 0x00, 8).decode('utf-8')
+        try:
+            if self.isDeleted:
+                self.shortFileName = readByte(data, 0x01, 7).decode('utf-8')
+            else:
+                self.shortFileName = readByte(data, 0x00, 8).decode('utf-8')
+        except:
+            pass
 
         self.shortExtension = readByte(data, 0x08, 3).decode('utf-8')
         self.attribute = int.from_bytes(data[0x0b:0x0b + 1], byteorder='little')
@@ -120,9 +123,12 @@ class ShortFileNameEntry():
 
         # format
         self.firstClusterNumber = self.highWordStartCluster << 16 | self.lowWordStartCluster
-        self.setCreationDateTime(getDateTimeFromDosTime(creationDate, creationTime, creationTenthOfSeconds))
-        self.setAccessedDateTime(getDateTimeFromDosTime(accessedDate, 0, 0))
-        self.setModifiedDateTime(getDateTimeFromDosTime(modificationDate, modificationTime, 0))
+        try:
+            self.setCreationDateTime(getDateTimeFromDosTime(creationDate, creationTime, creationTenthOfSeconds))
+            self.setAccessedDateTime(getDateTimeFromDosTime(accessedDate, 0, 0))
+            self.setModifiedDateTime(getDateTimeFromDosTime(modificationDate, modificationTime, 0))
+        except:
+            pass
 
     def isDirectoryEntry(self):
         return self.attribute == DIRECTORY

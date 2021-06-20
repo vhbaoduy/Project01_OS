@@ -31,23 +31,34 @@ class Directory(object):
     def readAllEntry(self):
         index = 0
         while(self.isDirectionEntry(index)):
-            fileEntry = self.getEntry(index)
-            #check error decode utf - 16:
-            fileEntry = self.checkErrorDecodeUTF16AtLNFEntry(fileEntry)
-            if not fileEntry.isDirectoryEntry():
-                fileEntry.setPath(self.path + fileEntry.getFileName())
+
+            if (self.getAttribute(index) == VOLUME_ID):
+                index+=1
             else:
-                fileEntry.setPath(self.path + fileEntry.getFileName()+"/")
-            firstCluster = fileEntry.getFirstClusterNumber()
+                # try:
+                    fileEntry = self.getEntry(index)
+                    #check error decode utf - 16:
+                    fileEntry = self.checkErrorDecodeUTF16AtLNFEntry(fileEntry)
+                    if not fileEntry.isDirectoryEntry():
+                        fileEntry.setPath(self.path + fileEntry.getFileName())
+                    else:
+                        fileEntry.setPath(self.path + fileEntry.getFileName()+"/")
+                    firstCluster = fileEntry.getFirstClusterNumber()
 
-            if firstCluster > 2 and not fileEntry.isDeletedEntry():
-                fileEntry.setOccupiedNumberCluster(self.getNumberOfClusterFileEntry(firstCluster))
-                fileEntry.setFirstStartSector(self.getFirstStartSector(firstCluster))
-                fileEntry.setLastSector(self.getLastSector(fileEntry))
+                    if firstCluster > 2 and not fileEntry.isDeletedEntry():
+                        fileEntry.setOccupiedNumberCluster(self.getNumberOfClusterFileEntry(firstCluster))
+                        fileEntry.setFirstStartSector(self.getFirstStartSector(firstCluster))
+                        fileEntry.setLastSector(self.getLastSector(fileEntry))
 
-            if not self.isSubDirectory(index):
-                self.entries.append(fileEntry)
-            index += fileEntry.getEntryCount()
+                    if not self.isSubDirectory(index):
+                        self.entries.append(fileEntry)
+                    index += fileEntry.getEntryCount()
+                # except:
+                    # print(index)
+
+            # except:
+            #     index+=1
+
 
     def getDirectoryAndFileEntries(self):
         entries = []
