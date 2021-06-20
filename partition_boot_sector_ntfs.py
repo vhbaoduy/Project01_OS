@@ -18,7 +18,7 @@ class BootSectorNTFS(RawStruct):
     def data_boot(self):
         return self.data
     def show_infor(self):
-        print("OEM ID:", self.oem_id)
+        # print("OEM ID:", self.oem_id)
         return '\tOEM ID:  '+str(self.oem_id)+self.bpb.show_infor()
 class Bpb(RawStruct):
     def __init__(self, data=None, offset=None, filename=None):

@@ -63,21 +63,36 @@ class PartitionEntry():
             else:
                 return 'Invalid bootable byte'
     def showInfor(self):
-        str1='\tActive'+self.getStatus()
+        str1 ='\tActive'+self.getStatus()
         print("Active: ",self.getStatus())
+
+        str2 = '\n\tStart CHS:  (%d,%d,%d)'% (self.startCylinder,self.startHead,self.startSector)
         print("Start CHS: (%d,%d,%d)" % (self.startCylinder,self.startHead,self.startSector))
+
+        str3 = '\n\tEnd CHS:  (%d,%d,%d)' % (self.endCylinder, self.endHead, self.endSector)
         print("End CHS: (%d,%d,%d)" % (self.endCylinder, self.endHead, self.endSector))
+
+        str4 = '\n\tPartition Type:  '+str(self.type)
         print("Partition Type:", self.type)
+
+        str5 = '\n\tLBA of first absolute sector:  '+str(self.LBA)
         print("LBA of first absolute sector: ", self.LBA)
+
+        str6 = '\n\tNumber of sectors in partition:  '+str(self.numSec)+'\n'
         print("Number of sectors in partition: ", self.numSec)
+        return str1+str2+str3+str4+str5+str6
 class PartitionTable:
     def __init__(self, data):
         self.Partitions =[PartitionEntry(data[16*i:16*(i+1)]) for i in range (0, 4)]
     def showInfor(self):
+        str = ''
         for i in range(len(self.Partitions)):
+            str += 'Partition '+str(i+1)
             print("Partition ", i+1)
-            self.Partitions[i].showInfor()
+            str += self.Partitions[i].showInfor()
             print("--------------------------------")
+            str += "--------------------------------\n"
+        return str
 
 class Mbr():
 
@@ -90,9 +105,11 @@ class Mbr():
 
 
     def showInforOfPart(self):
+        str = 'Disk signature:  '+str(self.DiskSig)
         print("Disk signature: ", self.DiskSig)
-        self.Partitions.showInfor()
+        str += self.Partitions.showInfor()
         print(self.checkMbrSig())
+        str += '\n'+self.checkMbrSig()
     def checkMbrSig(self):
         if (self.MBRSig == 0xAA55):
             return "Correct MBR signature"
