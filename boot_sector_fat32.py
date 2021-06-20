@@ -196,12 +196,12 @@ class FatTable():
     def getClusterList(self):
         return self.fats
     def getRootDirectory(self):
-        return Directory(open(self.disk,'rb'),self,self.pbr_fat,self.disk+"/")
+        return Directory(open(self.disk,'rb'),self,self.pbr_fat,self.disk+"/",0)
     def getDirectory(self,rootDirectory):
         dirEntries = rootDirectory.getDirectoryEntries()
         if len(dirEntries) > 0:
             for entry in dirEntries:
-                dir = Directory(open(self.disk,'rb'),self,self.pbr_fat,entry.getPath(),entry.getFirstStartSector())
+                dir = Directory(open(self.disk,'rb'),self,self.pbr_fat,entry.getPath(),rootDirectory.getDepth()+1,entry.getFirstStartSector())
                 self.directoryTree.append(dir)
                 self.getDirectory(dir)
 
@@ -211,10 +211,11 @@ class FatTable():
             folder += len(v.getDirectoryEntries())
             file += len(v.getArchiveFileEntries())
         return folder,file
-
+    def getDir(self):
+        return self.directoryTree
     def show(self):
         for v in self.directoryTree:
-            v.show()
+            v.show(v.getDepth())
 
 
 
@@ -228,9 +229,11 @@ if __name__ == "__main__":
     dir = fat_table.getRootDirectory()
 
     fat_table.getDirectory(dir)
-    print("(nFolders,nFiles):  ",fat_table.getNumberOfFoldersAndFiles())
+    # print("(nFolders,nFiles):  ",fat_table.getNumberOfFoldersAndFiles())
     fat_table.show()
-
+    # print(len(fat_table.getDir()))
+    # root= Root(fat_table.getDir())
+    # root.show(0)
 
 
 
