@@ -1,8 +1,13 @@
 from file_entry_fat32 import *
 import struct
 import sys
+def formatString(n):
+    s =""
+    for i in range(n):
+        s+="\t"
+    return s
 class Directory(object):
-    def __init__(self,file,fatTable,pbrFat,path,startSector = None):
+    def __init__(self,file,fatTable,pbrFat,path,depth,startSector = None):
         # pointer in file
         self.inputFile = file
         # pbr - fat
@@ -20,6 +25,7 @@ class Directory(object):
         self.entries = []
         self.path = path
         self.readAllEntry()
+        self.depth = depth
     # def isEmpty(self):
     #     return self.clusterList[0] == 0x00
     def readAllEntry(self):
@@ -128,8 +134,30 @@ class Directory(object):
             fileEntry.setId(index)
             fileEntry.setPath(self.path)
             return fileEntry
-
-    def show(self):
+    def getPath(self):
+        return self.path
+    def getDepth(self):
+        return self.depth
+    def hasDirectory(self):
+        entry = self.getDirectoryEntries()
+        if len(entry) > 0:
+            return True,len(entry)
+        else:
+            return False,0
+    def show(self,depth):
+        print(self.path)
         for entry in self.getDirectoryAndFileEntries():
-            out = entry.stringOfOutput()
-            print(out)
+            # out = entry.stringOfOutput()
+            print(formatString(depth)+entry.getFileName())
+
+
+class Root():
+    def __init__(self,directory):
+        self.directory = directory
+        self.directoryEntry = directory.getDirectoryEntries()
+
+
+
+
+
+
