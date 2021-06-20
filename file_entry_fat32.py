@@ -7,6 +7,8 @@ def getDateTimeFromDosTime(dosDate, dosTime,dosTenthOfSecond):
 
     creationYear = readBitsFromByte(dosDate, 16, 7) + 1980
     creationMonth = readBitsFromByte(dosDate, 9, 4)
+    # if (creationMonth == 0):
+    #     creationMonth+=1 # :))
     creationDay = readBitsFromByte(dosDate, 5, 5)
     creationHour = readBitsFromByte(dosTime, 16, 5)
     creationMinute = readBitsFromByte(dosTime, 11, 6)

@@ -64,47 +64,47 @@ class App(Frame):
         label.image = icon
         label.pack(anchor='se', padx=10 )
 
-    def FAT32(self, drive, frame):
-        path="\\\.\\"
-        for i in range (0, len(drive)-1):
-            path += drive[i]
-
-        label = Label(frame, text="BIOS Parameter Block information", font=("Georgia", 10), bg="#fffbe6")
-        label.pack(anchor=N, padx=5, pady=5)
-
-        data = BootSectorFAT32().readBootSector(path)
-        pbr_fat = PbrFat(data)
-        pbr_fat.readFat()
-        txt = pbr_fat.showInfo()
-        text = Text(frame, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
-        text.delete('1.0', "end")
-        text.insert(END, txt)
-        text.pack(side=LEFT, padx=10, pady=5)
-
-        print("--------------")
-        print("MBR info:  ")
-        mbr = Mbr(data)
-        mbr.showInforOfPart()
-
-    def NTFS(self,drive, frame):
-        path = "\\\.\\"
-        for i in range(0, len(drive) - 1):
-            path += drive[i]
-        print(path)
-
-        boots = BootSectorNTFS(None, 0, 512, path)
-        txt = boots.show_infor()
-
-        label = Label(frame, text="BIOS Parameter Block information", font=("Georgia", 10), bg="#fffbe6")
-        label.pack(anchor=N, padx=5, pady=5)
-
-        text = Text(frame, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
-        text.delete('1.0', "end")
-        text.insert(END, txt)
-        text.pack(side=LEFT, padx=10, pady=5)
-
-        MFTable = MFT(filename=path, offset=boots.mft_offset)
-        MFTable.preload_entries(1)
+    # def FAT32(self, drive, frame):
+    #     path="\\\.\\"
+    #     for i in range (0, len(drive)-1):
+    #         path += drive[i]
+    #
+    #     label = Label(frame, text="BIOS Parameter Block information", font=("Georgia", 10), bg="#fffbe6")
+    #     label.pack(anchor=N, padx=5, pady=5)
+    #
+    #     data = BootSectorFAT32().readBootSector(path)
+    #     pbr_fat = PbrFat(data)
+    #     pbr_fat.readFat()
+    #     txt = pbr_fat.showInfo()
+    #     text = Text(frame, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
+    #     text.delete('1.0', "end")
+    #     text.insert(END, txt)
+    #     text.pack(side=LEFT, padx=10, pady=5)
+    #
+    #     print("--------------")
+    #     print("MBR info:  ")
+    #     mbr = Mbr(data)
+    #     mbr.showInforOfPart()
+    #
+    # def NTFS(self,drive, frame):
+    #     path = "\\\.\\"
+    #     for i in range(0, len(drive) - 1):
+    #         path += drive[i]
+    #     print(path)
+    #
+    #     boots = BootSectorNTFS(None, 0, 512, path)
+    #     txt = boots.show_infor()
+    #
+    #     label = Label(frame, text="BIOS Parameter Block information", font=("Georgia", 10), bg="#fffbe6")
+    #     label.pack(anchor=N, padx=5, pady=5)
+    #
+    #     text = Text(frame, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
+    #     text.delete('1.0', "end")
+    #     text.insert(END, txt)
+    #     text.pack(side=LEFT, padx=10, pady=5)
+    #
+    #     MFTable = MFT(filename=path, offset=boots.mft_offset)
+    #     MFTable.preload_entries(1)
 
     def Boot_Sector(self,selected_drive, frame):
         drive = selected_drive.get()
@@ -124,7 +124,7 @@ class App(Frame):
             txt = pbr_fat.showInfo()
             text = Text(frame, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
             text.insert(END, txt)
-            text.pack(side=LEFT, padx=10, pady=5)
+            text.pack(side=LEFT, padx=20, pady=5)
         if (win32api.GetVolumeInformation(selected_drive.get())[4]=='NTFS'):
             path = "\\\.\\"
             for i in range(0, len(drive) - 1):
@@ -135,7 +135,34 @@ class App(Frame):
             text = Text(frame, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
             text.delete('1.0', "end")
             text.insert(END, txt)
-            text.pack(side=LEFT, padx=10, pady=5)
+            text.pack(side=LEFT, padx=20, pady=5)
+
+    def MBR_MFT(self,selected_drive, frame):
+        drive = selected_drive.get()
+        print(drive)
+        list = frame.pack_slaves()
+        for l in list:
+            l.destroy()
+        if (win32api.GetVolumeInformation(drive)[4]=='FAT32'):
+            label = Label(frame, text="Master Boot Record", font=("Georgia", 10), bg="#fffbe6")
+            label.pack(anchor=N, padx=5, pady=5)
+            path = "\\\.\\"
+            for i in range(0, len(drive) - 1):
+                path += drive[i]
+            data = BootSectorFAT32().readBootSector(path)
+            pbr_fat = PbrFat(data)
+            pbr_fat.readFat()
+            mbr = Mbr(data)
+            txt = mbr.showInforOfPart()
+            text = Text(frame, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
+            text.insert(END, txt)
+            text.pack(side=TOP, padx=20, pady=5)
+        if (win32api.GetVolumeInformation(selected_drive.get())[4]=='NTFS'):
+            label = Label(frame, text="Master Boot Record", font=("Georgia", 10), bg="#fffbe6")
+            label.pack(anchor=N, padx=5, pady=5)
+            path = "\\\.\\"
+            for i in range(0, len(drive) - 1):
+                path += drive[i]
 
     def callback(self,eventObject):
          return eventObject.widget.get()
@@ -180,7 +207,7 @@ class App(Frame):
         self.style.configure("TNotebook", background="green")
 
         self.style.theme_create("yummy", parent="alt", settings={
-            "TNotebook": {"configure": {"tabmargins": [2, 5, 2, 0] }},
+            "TNotebook": {"configure": {"tabmargins": [2, 5, 2, 0], "background": mygreen}},
             "TNotebook.Tab": {
                 "configure": {"padding": [5, 1], "background": mygreen},
                 "map": {"background": [("selected", "#fffbe6")],

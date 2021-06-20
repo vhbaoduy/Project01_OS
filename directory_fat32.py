@@ -15,7 +15,7 @@ class Directory(object):
         self.fatTable = fatTable
 
         # data area
-        self.dataStartSector, dummy = self.pbrFat.getDataInfor()
+        self.dataStartSector, self.dummy = self.pbrFat.getDataInfor()
         if startSector == None:
             self.dataOffset =  self.dataStartSector* self.pbrFat.getSectorSize()
         else:
@@ -88,12 +88,16 @@ class Directory(object):
     def isLongFileName(self,index):
         self.inputFile.seek(self.getOffsetOfEntry(index) + 0xB)
         return struct.unpack_from("<B", self.inputFile.read(1))[0] == LONG_FILE_NAME
-    # first byte == 0
+
+    def getAttribute(self,index):
+        self.inputFile.seek(self.getOffsetOfEntry(index) + 0xB)
+        return struct.unpack_from("<B", self.inputFile.read(1))[0]
     def isDirectionEntry(self,index):
         self.inputFile.seek(self.getOffsetOfEntry(index))
         return struct.unpack_from("<B",self.inputFile.read(1))[0] != 0x0
 
     def isDeletedEntry(self, index):
+        # print(self.getOffsetOfEntry(index),(self.dataStartSector+self.dummy)*self.pbrFat.getSectorSize())
         self.inputFile.seek(self.getOffsetOfEntry(index))
         return struct.unpack_from("<B", self.inputFile.read(1))[0] == 0xE5
     def isSubDirectory(self,index):
