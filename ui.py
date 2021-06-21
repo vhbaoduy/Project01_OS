@@ -204,20 +204,18 @@ class App(Frame):
         item = self.tree.selection()
         print("you clicked on", self.tree.item(item, "text"))
         filedialog.Open('D:\\19127040.jpg')
-    def insertNode(self,disk,myTree):
-        root = self.tree.insert('','end',text=disk,open = False)
-        nodes = myTree.getNodeList()
-        index = 1
-        while (index < len(nodes)):
-            id = self.tree.insert(root, 'end', text=nodes[index].getFileName())
-            if nodes[index].isDirectory():
-                count = 2
-                while(index+count < len(nodes) and nodes[index+count].getParent() == nodes[index]):
-                    self.tree.insert(id,'end',text=nodes[index+count].getFileName())
-                    count+=1
-                index+= count
-            else:
-                index+=1
+    def insertDirectory(self,root,disk):
+        id = self.tree.insert('', 'end', text=disk, open=False)
+        self.insertNode(root,id)
+
+    def insertNode(self,root,id):
+        if (len(root.getChildrenList()) > 0):
+            childs = root.getChildrenList()
+            for child in childs:
+                index = self.tree.insert(id, 'end', text=child.getFileName(), open=False)
+                if child.isDirectory():
+                    self.insertNode(child,index)
+
     def Directory(self, selected_drive, frame):
         drive = selected_drive.get()
 
@@ -233,6 +231,7 @@ class App(Frame):
         dir = fat_table.getRootDirectory()
         fat_table.getDirectory(dir)
         myTree = Root(fat_table.getDir())
+
         #....
         list = frame.pack_slaves()
         for l in list:
@@ -246,7 +245,7 @@ class App(Frame):
         xsb.grid(row=1, column=0, sticky='ew')
 
 
-        self.insertNode(path,myTree)
+        self.insertDirectory(myTree.getRoot(),path)
 
         # self.tree.bind('<<TreeviewOpen>>', self.open_node)
         self.tree.bind("<Double-1>", self.OnDoubleClick)
