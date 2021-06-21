@@ -172,22 +172,22 @@ class App(Frame):
             text.insert(END, txt)
             text.pack(side=LEFT, padx=20, pady=5)
 
-    def insert_node(self, parent, text, abspath):
-        print('insert:' + abspath)
-        node = self.tree.insert(parent, 'end', text=text, open=False)
-        if os.path.isdir(abspath):
-            print('is dir:'+abspath)
-            self.nodes[node] = abspath
-            self.tree.insert(node, 'end')
-
-    def open_node(self, event):
-        node = self.tree.focus()
-        abspath = self.nodes.pop(node, None)
-        if abspath:
-            print('open node: '+abspath)
-            self.tree.delete(self.tree.get_children(node))
-            for p in os.listdir(abspath):
-                self.insert_node(node, p, os.path.join(abspath, p))
+    # def insert_node(self, parent, text, abspath):
+    #     print('insert:' + abspath)
+    #     node = self.tree.insert(parent, 'end', text=text, open=False)
+    #     if os.path.isdir(abspath):
+    #         print('is dir:'+abspath)
+    #         self.nodes[node] = abspath
+    #         self.tree.insert(node, 'end')
+    #
+    # def open_node(self, event):
+    #     node = self.tree.focus()
+    #     abspath = self.nodes.pop(node, None)
+    #     if abspath:
+    #         print('open node: '+abspath)
+    #         self.tree.delete(self.tree.get_children(node))
+    #         for p in os.listdir(abspath):
+    #             self.insert_node(node, p, os.path.join(abspath, p))
 
     # def open_children(parent):
     #     tree.item(parent, open=True)
@@ -197,18 +197,46 @@ class App(Frame):
     # def handleOpenEvent(event):
     #     open_children(tree.focus())
 
+
+
+    ####....Directory
     def OnDoubleClick(self, event):
         item = self.tree.selection()
         print("you clicked on", self.tree.item(item, "text"))
         filedialog.Open('D:\\19127040.jpg')
-
+    def insertNode(self,disk,myTree):
+        root = self.tree.insert('','end',text=disk,open = False)
+        nodes = myTree.getNodeList()
+        index = 1
+        while (index < len(nodes)):
+            id = self.tree.insert(root, 'end', text=nodes[index].getFileName())
+            if nodes[index].isDirectory():
+                count = 2
+                while(index+count < len(nodes) and nodes[index+count].getParent() == nodes[index]):
+                    self.tree.insert(id,'end',text=nodes[index+count].getFileName())
+                    count+=1
+                index+= count
+            else:
+                index+=1
     def Directory(self, selected_drive, frame):
         drive = selected_drive.get()
-        print(drive)
+
+        #...
+        path = "\\\.\\"
+        for i in range(0, len(drive) - 1):
+            path += drive[i]
+
+        bootSectorData = BootSectorFAT32().readBootSector(path)
+        pbr_fat = PbrFat(bootSectorData)
+        pbr_fat.readFat()
+        fat_table = FatTable(path, pbr_fat)
+        dir = fat_table.getRootDirectory()
+        fat_table.getDirectory(dir)
+        myTree = Root(fat_table.getDir())
+        #....
         list = frame.pack_slaves()
         for l in list:
             l.destroy()
-        self.nodes = dict()
         self.tree = ttk.Treeview(frame)
         ysb = ttk.Scrollbar(frame, orient='vertical', command=self.tree.yview)
         xsb = ttk.Scrollbar(frame, orient='horizontal', command=self.tree.xview)
@@ -217,10 +245,10 @@ class App(Frame):
         ysb.grid(row=0, column=1, sticky='ns')
         xsb.grid(row=1, column=0, sticky='ew')
 
-        abspath = os.path.abspath(drive)
-        print(abspath)
-        self.insert_node('', abspath, abspath)
-        self.tree.bind('<<TreeviewOpen>>', self.open_node)
+
+        self.insertNode(path,myTree)
+
+        # self.tree.bind('<<TreeviewOpen>>', self.open_node)
         self.tree.bind("<Double-1>", self.OnDoubleClick)
 
     def callback(self,eventObject):

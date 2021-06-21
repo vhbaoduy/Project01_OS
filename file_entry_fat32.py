@@ -207,6 +207,34 @@ class ShortFileNameEntry():
 
     def getFirstSectorStart(self, startSector):
         return self.firstStartSector
+    def getPropertyEntry(self):
+        property = ""
+        property+= "\nPath: "+ self.path
+        property+="\nFile name: "+ self.getFileName()
+        property +="\nAttribute: "
+        if (self.attribute == READ_ONLY):
+            property+= "*READ ONLY*"
+        if (self.attribute == HIDDEN_FILE):
+            property += "*HIDDEN*"
+        if (self.attribute == SYSTEM_FILE):
+            property += "*SYSTEM*"
+        if (self.attribute == VOLUME_ID):
+            property += "*VOLUME ID*"
+        if (self.attribute == DIRECTORY):
+            property += "*DIRECTORY*"
+        if (self.attribute == ARCHIVE):
+            property += "*ARCHIVE*"
+        if (self.attribute == LONG_FILE_NAME):
+            property += "*LONG_FILE_NAME*"
+        property += "\nCreation time: " + self.creationTime.strftime('%d.%m.%Y %H:%M:%S:%f')
+        property += "\nLast Accessed time: " + self.accessedTime.strftime('%d.%m.%Y')
+        property += "\nModification time: " + self.modificationTime.strftime('%d.%m.%Y %H:%M:%S')
+        property += "\nFirst cluster: " + str(self.firstClusterNumber)
+        property += "\nNum cluster:" + str(self.numCluster)
+        property += "\nFilesize: " + str(self.fileSize) + " (bytes)"
+        property += "\nEntry count: " + str(self.entryCount)
+        property += "\n[Start Sector - End Sector]: " + str(self.firstStartSector) + " - " + str(self.lastSector)
+
     def stringOfOutput(self):
         output = "-----------------"
         output += "\nPath: " + self.path

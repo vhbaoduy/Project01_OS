@@ -201,7 +201,7 @@ class FatTable():
         dirEntries = rootDirectory.getDirectoryEntries()
         if len(dirEntries) > 0:
             for entry in dirEntries:
-                dir = Directory(open(self.disk,'rb'),self,self.pbr_fat,entry.getPath(),rootDirectory.getDepth()+1,entry.getFirstStartSector())
+                dir = Directory(open(self.disk,'rb'),self,self.pbr_fat,entry.getPath()+"/",rootDirectory.getDepth()+1,entry.getFirstStartSector())
                 self.directoryTree.append(dir)
                 self.getDirectory(dir)
 
@@ -220,28 +220,19 @@ class FatTable():
 
 
 if __name__ == "__main__":
-    disk = r"\\.\g:"
+    disk = r"\\.\H:"
+
     bootSectorData = BootSectorFAT32().readBootSector(disk)
     pbr_fat = PbrFat(bootSectorData)
     pbr_fat.readFat()
-    # print(pbr_fat.showInfo())
-    # print(pbr_fat.getDataInfor())
-    # print(pbr_fat.getRootDirInfor())
-    # data = readDataFromDisk(disk,pbr_fat.getDataInfor()[0],1)
-    # for i in range(len(data)):
-    #     print(hex(data[i]),end=' ')
-    #     if (i+1) % 16 == 0:
-    #         print()
-
     fat_table = FatTable(disk,pbr_fat)
     dir = fat_table.getRootDirectory()
-
     fat_table.getDirectory(dir)
-    # print("(nFolders,nFiles):  ",fat_table.getNumberOfFoldersAndFiles())
-    fat_table.show()
-    # print(len(fat_table.getDir()))
-    # root= Root(fat_table.getDir())
-    # root.show(0)
+    root= Root(fat_table.getDir())
+    entries = root.getNodeList()
+    for v in entries:
+        if not v.isEmpty():
+            print(v.getFileName())
 
 
 

@@ -1,6 +1,7 @@
 from file_entry_fat32 import *
 import struct
 import sys
+from collections import deque
 def formatString(n):
     s =""
     for i in range(n):
@@ -31,34 +32,26 @@ class Directory(object):
     def readAllEntry(self):
         index = 0
         while(self.isDirectionEntry(index)):
-
             if (self.getAttribute(index) == VOLUME_ID):
                 index+=1
             else:
-                # try:
-                    fileEntry = self.getEntry(index)
-                    #check error decode utf - 16:
-                    fileEntry = self.checkErrorDecodeUTF16AtLNFEntry(fileEntry)
-                    if not fileEntry.isDirectoryEntry():
-                        fileEntry.setPath(self.path + fileEntry.getFileName())
-                    else:
-                        fileEntry.setPath(self.path + fileEntry.getFileName()+"/")
-                    firstCluster = fileEntry.getFirstClusterNumber()
+                fileEntry = self.getEntry(index)
+                # check error decode utf - 16:
+                fileEntry = self.checkErrorDecodeUTF16AtLNFEntry(fileEntry)
+                if not fileEntry.isDirectoryEntry():
+                    fileEntry.setPath(self.path + fileEntry.getFileName())
+                else:
+                    fileEntry.setPath(self.path + fileEntry.getFileName())
+                firstCluster = fileEntry.getFirstClusterNumber()
 
-                    if firstCluster > 2 and not fileEntry.isDeletedEntry():
-                        fileEntry.setOccupiedNumberCluster(self.getNumberOfClusterFileEntry(firstCluster))
-                        fileEntry.setFirstStartSector(self.getFirstStartSector(firstCluster))
-                        fileEntry.setLastSector(self.getLastSector(fileEntry))
+                if firstCluster > 2 and not fileEntry.isDeletedEntry():
+                    fileEntry.setOccupiedNumberCluster(self.getNumberOfClusterFileEntry(firstCluster))
+                    fileEntry.setFirstStartSector(self.getFirstStartSector(firstCluster))
+                    fileEntry.setLastSector(self.getLastSector(fileEntry))
 
-                    if not self.isSubDirectory(index):
-                        self.entries.append(fileEntry)
-                    index += fileEntry.getEntryCount()
-                # except:
-                    # print(index)
-
-            # except:
-            #     index+=1
-
+                if not self.isSubDirectory(index):
+                    self.entries.append(fileEntry)
+                index += fileEntry.getEntryCount()
 
     def getDirectoryAndFileEntries(self):
         entries = []
@@ -167,10 +160,74 @@ class Directory(object):
             print(formatString(depth)+entry.getFileName())
 
 
+class Node():
+    def __init__(self,entry =None,parent = None):
+        #type = entry
+        self.entry = entry
+        self.parent = parent # node
+        self.childs = []
+    def getProperty(self):
+        return self.entry.getPropertyEntry()
+    def isEmpty(self):
+        return self.entry == None
+    def addChildren(self,child):
+        self.childs.append(child)
+    def isDirectory(self):
+        return self.entry.isDirectoryEntry()
+    def getChildrenList(self):
+        return self.childs
+    def getFileName(self):
+        return self.entry.getFileName()
+    def getPath(self):
+        return self.entry.getPath()
+    def getParent(self):
+        return self.parent
 class Root():
     def __init__(self,directory):
         self.directory = directory
-        self.directoryEntry = directory.getDirectoryEntries()
+        self.root = Node()
+
+        #RDET
+        self.addRDET()
+        self.addSDET()
+        self.entries = [self.root]
+        self.transfer(self.root)
+    def addRDET(self):
+        temp = self.directory[0].getDirectoryAndFileEntries()
+        for v in temp:
+            self.root.addChildren(Node(v,self.root))
+    def addSDET(self):
+        for i in range(1,len(self.directory)):
+            temp = self.directory[i].getDirectoryAndFileEntries()
+            for v in temp:
+                self.insertNode(self.root,v)
+    def insertNode(self,root,entry):
+        if (not root.isEmpty()):
+            if root.getPath() + "/" + entry.getFileName() == entry.getPath() :
+                return root.addChildren(Node(entry, root))
+        if (len(root.getChildrenList()) > 0):
+            childs = root.getChildrenList()
+            for child in childs:
+                if child.isDirectory():
+                        self.insertNode(child,entry)
+    def transfer(self,root):
+        if (len(root.getChildrenList()) > 0):
+            childs = root.getChildrenList()
+            for child in childs:
+                self.entries.append(child)
+                # print(child.getFileName())
+                if child.isDirectory():
+                    self.transfer(child)
+        return
+    def getNodeList(self):
+        return self.entries
+    def getRoot(self):
+        return self.root
+
+
+
+
+
 
 
 

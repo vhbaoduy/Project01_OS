@@ -63,7 +63,7 @@ class PartitionEntry():
             else:
                 return 'Invalid bootable byte'
     def showInfor(self):
-        str1 = '\t\tActive:  '+self.getStatus()
+        str1 = '\t\tActive:  '+hex(self.active) + " - "+ self.getStatus()
         print("Active: ",self.getStatus())
 
         str2 = '\n\t\tStart CHS:  (%d,%d,%d)'% (self.startCylinder,self.startHead,self.startSector)
