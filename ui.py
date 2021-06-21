@@ -8,6 +8,8 @@ from tkinter import Frame, Label, Entry
 from tkinter import ttk
 from PIL import Image, ImageTk
 import win32api
+import os
+from tkinter import filedialog
 import win32file
 
 # drives = win32api.GetLogicalDriveStrings()
@@ -170,6 +172,57 @@ class App(Frame):
             text.insert(END, txt)
             text.pack(side=LEFT, padx=20, pady=5)
 
+    def insert_node(self, parent, text, abspath):
+        print('insert:' + abspath)
+        node = self.tree.insert(parent, 'end', text=text, open=False)
+        if os.path.isdir(abspath):
+            print('is dir:'+abspath)
+            self.nodes[node] = abspath
+            self.tree.insert(node, 'end')
+
+    def open_node(self, event):
+        node = self.tree.focus()
+        abspath = self.nodes.pop(node, None)
+        if abspath:
+            print('open node: '+abspath)
+            self.tree.delete(self.tree.get_children(node))
+            for p in os.listdir(abspath):
+                self.insert_node(node, p, os.path.join(abspath, p))
+
+    # def open_children(parent):
+    #     tree.item(parent, open=True)
+    #     for child in tree.get_children(parent):
+    #         open_children(child)
+    #
+    # def handleOpenEvent(event):
+    #     open_children(tree.focus())
+
+    def OnDoubleClick(self, event):
+        item = self.tree.selection()
+        print("you clicked on", self.tree.item(item, "text"))
+        filedialog.Open('D:\\19127040.jpg')
+
+    def Directory(self, selected_drive, frame):
+        drive = selected_drive.get()
+        print(drive)
+        list = frame.pack_slaves()
+        for l in list:
+            l.destroy()
+        self.nodes = dict()
+        self.tree = ttk.Treeview(frame)
+        ysb = ttk.Scrollbar(frame, orient='vertical', command=self.tree.yview)
+        xsb = ttk.Scrollbar(frame, orient='horizontal', command=self.tree.xview)
+        self.tree.configure(yscroll=ysb.set, xscroll=xsb.set)
+        self.tree.grid()
+        ysb.grid(row=0, column=1, sticky='ns')
+        xsb.grid(row=1, column=0, sticky='ew')
+
+        abspath = os.path.abspath(drive)
+        print(abspath)
+        self.insert_node('', abspath, abspath)
+        self.tree.bind('<<TreeviewOpen>>', self.open_node)
+        self.tree.bind("<Double-1>", self.OnDoubleClick)
+
     def callback(self,eventObject):
          return eventObject.widget.get()
         # print(dir(eventObject))
@@ -205,7 +258,7 @@ class App(Frame):
         button1.pack(side=LEFT, padx=10, pady=25)
 
         button2 = tkinter.Button(frame1, text='Directory', font=("Georgia", 10), bg="#7be37b", activeforeground='white',
-                                 activebackground='firebrick4', command=lambda: self.MBR(selected_drive, frame2))
+                                 activebackground='firebrick4', command=lambda: self.Directory(selected_drive, frame2))
         button2.pack(side=LEFT, padx=10, pady=25)
         # button.grid(column=4, row=5, padx=10, pady=25)
 
