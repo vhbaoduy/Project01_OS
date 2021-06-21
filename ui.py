@@ -189,13 +189,13 @@ class App(Frame):
     #         for p in os.listdir(abspath):
     #             self.insert_node(node, p, os.path.join(abspath, p))
 
-    # def open_children(parent):
-    #     tree.item(parent, open=True)
-    #     for child in tree.get_children(parent):
-    #         open_children(child)
-    #
-    # def handleOpenEvent(event):
-    #     open_children(tree.focus())
+    def open_children(self,parent):
+        self.tree.item(parent, open=True)
+        for child in self.tree.get_children(parent):
+            self.open_children(child)
+
+    def handleOpenEvent(self,event):
+        self.open_children(self.tree.focus())
 
 
 
@@ -203,7 +203,9 @@ class App(Frame):
     def OnDoubleClick(self, event):
         item = self.tree.selection()
         print("you clicked on", self.tree.item(item, "text"))
-        filedialog.Open('D:\\19127040.jpg')
+        # filedialog.Open('D:\\19127040.jpg')
+        # os.system(r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Accessories\Notepad.exe" + 'D:\\19127040.txt')
+
     def insertDirectory(self,root,disk):
         id = self.tree.insert('', 'end', text=disk, open=False)
         self.insertNode(root,id)
@@ -215,6 +217,23 @@ class App(Frame):
                 index = self.tree.insert(id, 'end', text=child.getFileName(), open=False)
                 if child.isDirectory():
                     self.insertNode(child,index)
+
+
+
+    # def insertNode(self,disk,myTree):
+    #     root = self.tree.insert('','end',text=disk,open = False)
+    #     nodes = myTree.getNodeList()
+    #     index = 1
+    #     while (index < len(nodes)):
+    #         id = self.tree.insert(root, 'end', text=nodes[index].getFileName())
+    #         if nodes[index].isDirectory():
+    #             count = 2
+    #             while(index+count < len(nodes) and nodes[index+count].getParent() == nodes[index]):
+    #                 self.tree.insert(id,'end',text=nodes[index+count].getFileName())
+    #                 count+=1
+    #             index+= count
+    #         else:
+    #             index+=1
 
     def Directory(self, selected_drive, frame):
         drive = selected_drive.get()
@@ -247,7 +266,7 @@ class App(Frame):
 
         self.insertDirectory(myTree.getRoot(),path)
 
-        # self.tree.bind('<<TreeviewOpen>>', self.open_node)
+        self.tree.bind('<<TreeviewOpen>>', self.handleOpenEvent)
         self.tree.bind("<Double-1>", self.OnDoubleClick)
 
     def callback(self,eventObject):

@@ -182,6 +182,7 @@ class Node():
         return self.entry.getPath()
     def getParent(self):
         return self.parent
+
 class Root():
     def __init__(self,directory):
         self.directory = directory
@@ -223,8 +224,6 @@ class Root():
         return self.entries
     def getRoot(self):
         return self.root
-
-
 
 
 

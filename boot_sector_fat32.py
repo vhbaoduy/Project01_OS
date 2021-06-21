@@ -220,7 +220,7 @@ class FatTable():
 
 
 if __name__ == "__main__":
-    disk = r"\\.\H:"
+    disk = r"\\.\G:"
 
     bootSectorData = BootSectorFAT32().readBootSector(disk)
     pbr_fat = PbrFat(bootSectorData)
