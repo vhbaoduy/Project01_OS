@@ -34,8 +34,7 @@ class MFTAttrHeader(RawStruct):
             self.attr_offset = self.get_ushort(0x14)
             self.indexed = self.get_uchar(0x16)
             if (self.length_of_name > 0):
-                self.attr_name = self.get_chunk(
-                    0x18, 2 * self.length_of_name).decode('utf-16')
-                # print self.attr_name.decode('utf-16')
+                self.attr_name = self.get_chunk(0x18, 2 * self.length_of_name).decode('utf-16')
+                # print(self.attr_name)
             # The rest byte is 0x00 padding
-            # print "Attr Offset: 0x%x" % (self.attr_offset)
+            # print( "Attr Offset: 0x%x" % (self.attr_offset), hex(self.type))

@@ -1,9 +1,10 @@
 from mbr import *
 from mft_attribute_ntfs import *
+from anytree import Node, RenderTree
 BPB_SIZE = 25
 BPB_OFFSET = 0x0B
 EXTENDED_BPB_SIZE = 48
-HEADER_SIZE=42
+HEADER_SIZE=48
 class BootSectorNTFS(RawStruct):
     def __init__(self, data=None, offset=None, length=None, filename=None):
         RawStruct.__init__(self, data=data, offset=offset, length=length, filename=filename)
@@ -91,7 +92,7 @@ class Bpb(RawStruct):
         else:
             return self.clusters_per_mft * self.sectors_per_cluster * self.bytes_per_sector
     def mft_offset(self):
-        return self.bytes_per_sector * self.sectors_per_cluster * self.mft_cluster
+        return self.bytes_per_sector * (self.sectors_per_cluster * self.mft_cluster+78)
 
     def mft_mirror_offset(self):
         return self.bytes_per_sector * self.sectors_per_cluster * self.mft_mirror_cluster
@@ -102,25 +103,28 @@ class MFT(object):
         self.entry_size=entry_size
         self.filename=filename
         self.entries={}
+        self.dir=[0 for i in range(100)]
+        self.dir[5]=Node("root")
     def get_entry(self,entry_id):
         if entry_id in self.entries:
             return self.entries[entry_id]
         else:
             entry_offset = entry_id * self.entry_size
             # load entry
-            entry = MFTEntry(filename=self.filename,offset=self.offset + entry_offset,length=self.entry_size,index=entry_id)
+            self.entry = MFTEntry(filename=self.filename,offset=self.offset + entry_offset,length=self.entry_size,index=entry_id)
             # cache entry
-            self.entries[entry_id] = entry
-            return entry
+            self.dir[self.entry.header.ID]=Node(self.entry.fname_str,parent=self.dir[self.entry.parent_ID])
+            print(self.entry.fname_str,self.entry.header.ID,self.entry.parent_ID)
+            self.entries[entry_id] = self.entry
+            return self.entry
 
     def preload_entries(self, count):
         for n in range(0, count):
             self.get_entry(n)
-    def __str__(self):
-        result = ""
-        for entry_id in self.entries:
-            result += str(self.entries[entry_id]) + "\n\n"
-        return result
+        for pre, fill, node in RenderTree(self.dir[5]):
+            print("%s%s" % (pre, node.name))
+        # for ent in self.entries:
+        #     print(ent)
 
 class MFTEntryHeader(RawStruct):
     def __init__(self,data):
@@ -137,6 +141,7 @@ class MFTEntryHeader(RawStruct):
         self.allocated_size=self.get_uint(28)
         self.file_ref_to_baseFile=self.get_ulonglong(32)
         self.next_attr=self.get_ushort(40)
+        self.ID=self.get_uint(44)
 
 class MFTEntry(RawStruct):
     def __init__(self, data=None, offset=None, length=None, filename=None, index=None):
@@ -144,27 +149,10 @@ class MFTEntry(RawStruct):
         self.index=index
         self.attributes=[]
         self.fname_str=""
+        self.parent_ID=None
         self.header=MFTEntryHeader(self.get_chunk(0, HEADER_SIZE))
-        self.name_str=self.get_entry_name(self.index)
         self.load_attributes()
 
-
-    def get_entry_name(self, index):
-        names = {
-            0: "Master File Table",
-            1: "Master File Table Mirror",
-            2: "Log File",
-            3: "Volume File",
-            4: "Attribute Definition Table",
-            5: "Root Directory",
-            6: "Volume Bitmap",
-            7: "Boot Sector",
-            8: "Bad Cluster List",
-            9: "Security",
-            10: "Upcase Table",
-            11: "Extend Table",
-        }
-        return names.get(index, "(unknown/unnamed)")
 
     def is_directory(self):
         return self.header.flags & 0x0002
@@ -190,8 +178,9 @@ class MFTEntry(RawStruct):
                 return attr
         return None
 
+
     def load_attributes(self):
-        free_space = self.size() - HEADER_SIZE
+        free_space = self.size - HEADER_SIZE
         offset= self.header.first_attr_offset
         while free_space > 0:
             attr = self.get_attribute(offset)
@@ -199,6 +188,7 @@ class MFTEntry(RawStruct):
             if (attr is not None):
                 if attr.header.type == MFT_ATTR_FILENAME:
                     self.fname_str = attr.fname
+                    self.parent_ID = attr.parent_ref
 
                 self.attributes.append(attr)
                 free_space = free_space - attr.header.length
@@ -206,12 +196,12 @@ class MFTEntry(RawStruct):
             else:
                 break
 
-    def __str__(self):
-        result = ("File: %d\n%s (%s)" % (self.index, self.name_str, self.fname_str))
-
-        for attr in self.attributes:
-            result = result + "\n\t" + str(attr)
-        return result
+    # def __str__(self):
+    #     result = ("File: %d\n%s (%s)" % (self.index, self.name_str, self.fname_str))
+    #
+    #     for attr in self.attributes:
+    #         result = result + "\n\t" + str(attr)
+    #     return result
 
 
 def NTFS():
@@ -227,8 +217,8 @@ if __name__ == "__main__":
     #boots.show_infor()
 
     MFTable=MFT(filename=r"\\.\E:",offset=boots.mft_offset)
-    MFTable.preload_entries(1)
-
+    MFTable.preload_entries(17)
+    # print(MFTable.__str__())
     # print("--------------")
     # print("MBR info:  ")
     # mbr = Mbr(boots.data_boot())

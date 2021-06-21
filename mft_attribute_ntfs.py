@@ -83,7 +83,7 @@ class MFTAttrStandardInformation(MFTAttr):
     def __init__(self, data):
         MFTAttr.__init__(self, data)
         self.type_str = "$STANDARD_INFORMATION"
-        offset = self.header.size()
+        offset = self.header.size
         # File Creation
         self.ctime = self.get_ulonglong(offset)
         # File Alteration
@@ -101,7 +101,7 @@ class MFTAttrStandardInformation(MFTAttr):
         self.class_id = self.get_uint(offset + 0x2C)
 
         # Not all SI headers include 2K fields
-        if (self.size() > 0x48):
+        if (self.size > 0x48):
             self.owner_id = self.get_uint(offset + 0x30)
             self.sec_id = self.get_uint(offset + 0x34)
             self.quata = self.get_ulonglong(offset + 0x38)
@@ -151,8 +151,9 @@ class MFTAttrFilename(MFTAttr):
         MFTAttr.__init__(self, data)
         self.type_str = "$FILE_NAME"
 
-        offset = self.header.size()
-        self.parent_ref = self.get_ulonglong(offset)
+        offset = self.header.size
+        # print(offset)
+        self.parent_ref = struct.unpack("<hi", self.data[offset:offset + 6])[0]
         self.ctime = self.get_ulonglong(offset + 0x08)
         self.atime = self.get_ulonglong(offset + 0x10)
         self.mtime = self.get_ulonglong(offset + 0x18)
@@ -166,7 +167,7 @@ class MFTAttrFilename(MFTAttr):
         self.fnspace = self.get_uchar(offset + 0x41)
         self.fname = self.get_chunk(offset + 0x42, 2 *
                                     self.fnamength).decode('utf-16')
-
+        # print(self.fname)
     
     def ctime_dt(self):
         return filetime_to_dt(self.ctime)

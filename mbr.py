@@ -17,6 +17,7 @@ class RawStruct(object):
                     self.data = f.read(length)
     def data(self):
         return self.data
+    @property
     def size(self):
         return len(self.data)
     def get_chunk(self, offset, length):
