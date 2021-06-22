@@ -3,8 +3,9 @@ from partition_boot_sector_ntfs import *
 from mbr import *
 import tkinter
 from tkinter import *
-from tkinter import Tk, Text, TOP, BOTH, X, N, LEFT
+from tkinter import Tk, Text, TOP, BOTH, X, N, LEFT, scrolledtext
 from tkinter import Frame, Label, Entry
+import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
 import win32api
@@ -49,22 +50,27 @@ class App(Frame):
                      bg='#0D4CB2', fg='white', width=34)
         txt4.pack(anchor=N, padx=5, pady=20)
 
-        txt5= Label(frame2, text="  Teacher: Lê Viết Long", font=("Georgia", 12), bg="#fffbe6")
-        txt5.pack(anchor='w', side=LEFT, padx=5, pady=20, fill=BOTH)
-
         frame3 = Frame(tab1, bg="#fffbe6")
         frame3.pack(fill=BOTH, expand=True)
 
+        txt5 = Label(frame2, text="  Teacher: Lê Viết Long", font=("Georgia", 12), bg="#fffbe6")
+        txt5.pack(anchor='s', side=LEFT, padx=5, pady=20)
+
+        frame3 = Frame(tab1, bg="#fffbe6")
+        frame3.pack(fill=BOTH)
+
         stu = "  Students:  Võ Hoàng Bảo Duy - 19127027 \n              Trần Ngọc Lam - 19127040\n      Lê Minh Sĩ - 19127064"
         txt6 = Label(frame3, text=stu, font=("Georgia", 12), bg="#fffbe6")
-        txt6.pack(anchor='n', side=LEFT, padx=5, pady=20)
+        txt6.pack(anchor='s', side=LEFT, padx=5, pady=20)
 
-        frame3.img= Image.open("Ảnh1.png")
+        frame3.img = Image.open("Ảnh1.png")
 
         icon = ImageTk.PhotoImage(frame3.img)
         label = Label(frame3, image=icon, bg="#fffbe6")
         label.image = icon
-        label.pack(anchor='se', padx=10 )
+        label.pack(anchor='s',side =RIGHT, padx=20, pady=10)
+
+    # label.pack(side=RIGHT,anchor='se', padx=20, pady=10 )
 
     # def FAT32(self, drive, frame):
     #     path="\\\.\\"
@@ -172,23 +178,6 @@ class App(Frame):
             text.insert(END, txt)
             text.pack(side=LEFT, padx=20, pady=5)
 
-    # def insert_node(self, parent, text, abspath):
-    #     print('insert:' + abspath)
-    #     node = self.tree.insert(parent, 'end', text=text, open=False)
-    #     if os.path.isdir(abspath):
-    #         print('is dir:'+abspath)
-    #         self.nodes[node] = abspath
-    #         self.tree.insert(node, 'end')
-    #
-    # def open_node(self, event):
-    #     node = self.tree.focus()
-    #     abspath = self.nodes.pop(node, None)
-    #     if abspath:
-    #         print('open node: '+abspath)
-    #         self.tree.delete(self.tree.get_children(node))
-    #         for p in os.listdir(abspath):
-    #             self.insert_node(node, p, os.path.join(abspath, p))
-
     def open_children(self,parent):
         self.tree.item(parent, open=True)
         for child in self.tree.get_children(parent):
@@ -200,11 +189,25 @@ class App(Frame):
 
 
     ####....Directory
-    def OnDoubleClick(self, event):
+    def getPath(self, item, path):
+        parent_iid = self.tree.parent(item)
+        if parent_iid:
+            temp = self.tree.item(parent_iid)['text']
+            print(temp)
+            return self.getPath(parent_iid, "\\"+self.tree.item(item, "text")+path)
+        return "\\"+self.tree.item(item, "text")+path
+    def OnDoubleClick(self, text):
         item = self.tree.selection()
         print("you clicked on", self.tree.item(item, "text"))
-        # filedialog.Open('D:\\19127040.jpg')
-        # os.system(r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Accessories\Notepad.exe" + 'D:\\19127040.txt')
+        path = ''
+        # path = '\\'+ self.tree.item(item, "text")
+        path = self.getPath(item, path)
+        path = path[5:len(path)]
+        path = open(path, 'r', encoding='utf-8')
+        data = path.read()
+        path.close()
+        text.delete("1.0", END)
+        text.insert(END, data)
 
     def insertDirectory(self,root,disk):
         id = self.tree.insert('', 'end', text=disk, open=False)
@@ -218,27 +221,17 @@ class App(Frame):
                 if child.isDirectory():
                     self.insertNode(child,index)
 
-
-
-    # def insertNode(self,disk,myTree):
-    #     root = self.tree.insert('','end',text=disk,open = False)
-    #     nodes = myTree.getNodeList()
-    #     index = 1
-    #     while (index < len(nodes)):
-    #         id = self.tree.insert(root, 'end', text=nodes[index].getFileName())
-    #         if nodes[index].isDirectory():
-    #             count = 2
-    #             while(index+count < len(nodes) and nodes[index+count].getParent() == nodes[index]):
-    #                 self.tree.insert(id,'end',text=nodes[index+count].getFileName())
-    #                 count+=1
-    #             index+= count
-    #         else:
-    #             index+=1
+    def autoscroll(self, sbar, first, last):
+        """Hide and show scrollbar as needed."""
+        first, last = float(first), float(last)
+        if first <= 0 and last >= 1:
+            sbar.grid_remove()
+        else:
+            sbar.grid()
+        sbar.set(first, last)
 
     def Directory(self, selected_drive, frame):
         drive = selected_drive.get()
-
-        #...
         path = "\\\.\\"
         for i in range(0, len(drive) - 1):
             path += drive[i]
@@ -251,23 +244,40 @@ class App(Frame):
         fat_table.getDirectory(dir)
         myTree = Root(fat_table.getDir())
 
-        #....
         list = frame.pack_slaves()
         for l in list:
             l.destroy()
-        self.tree = ttk.Treeview(frame)
-        ysb = ttk.Scrollbar(frame, orient='vertical', command=self.tree.yview)
-        xsb = ttk.Scrollbar(frame, orient='horizontal', command=self.tree.xview)
-        self.tree.configure(yscroll=ysb.set, xscroll=xsb.set)
-        self.tree.grid()
+        splitter = tk.PanedWindow(frame, orient=tk.HORIZONTAL)
+        # Left-side
+        frame_left = tk.Frame(splitter)
+        self.tree = ttk.Treeview(frame_left)
+        ysb = ttk.Scrollbar(frame_left, orient='vertical', command=self.tree.yview)
+        xsb = ttk.Scrollbar(frame_left, orient='horizontal', command=self.tree.xview)
+        # Right-side
+        frame_right = tk.Frame(splitter)
+        text = scrolledtext.ScrolledText(frame_right, font=("Cambria", 12), bg="white", spacing1=4, relief=FLAT)
+
+        # overall layout
+        splitter.add(frame_left)
+        splitter.add(frame_right)
+        splitter.pack(fill=tk.BOTH, expand=1)
+        # left-side widget layout
+        self.tree.grid(row=0, column=0, sticky='NSEW')
         ysb.grid(row=0, column=1, sticky='ns')
         xsb.grid(row=1, column=0, sticky='ew')
+        # left-side frame's grid config
+        frame_left.columnconfigure(0, weight=1)
+        frame_left.rowconfigure(0, weight=1)
+        # right-side widget layout
+        text.pack(padx=10,pady=10, fill="both")
 
+        self.tree.configure(yscrollcommand=lambda f, l: self.autoscroll(ysb, f, l),
+                            xscrollcommand=lambda f, l: self.autoscroll(xsb, f, l))
 
         self.insertDirectory(myTree.getRoot(),path)
 
         self.tree.bind('<<TreeviewOpen>>', self.handleOpenEvent)
-        self.tree.bind("<Double-1>", self.OnDoubleClick)
+        self.tree.bind("<Double-1>", lambda envent: self.OnDoubleClick(text))
 
     def callback(self,eventObject):
          return eventObject.widget.get()
@@ -313,7 +323,6 @@ class App(Frame):
         mygreen = "#d2ffd2"
         myred = "#dd0202"
         self.style = ttk.Style()
-        self.style.configure("TNotebook", background="green")
 
         self.style.theme_create("yummy", parent="alt", settings={
             "TNotebook": {"configure": {"tabmargins": [2, 5, 2, 0], "background": mygreen}},

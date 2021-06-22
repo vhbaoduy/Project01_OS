@@ -122,19 +122,19 @@ class PbrFat():
         str20 = '\n\tFlags describing the drive:  '+str(self.BPB_ExtFlags)
         # print("----: ",self.BPB_ExtFlags)
 
-        str21 = '\n\t\t+ Version of FAT32:  '+str(self.BPB_FSver)
+        str21 = '\n\t     + Version of FAT32:  '+str(self.BPB_FSver)
         # print("Version: ", self.BPB_FSver)
 
-        str22 = "\n\t\t+ The first cluster in FAT32 RDET:  "+str(self.BPB_RootStartClus)
+        str22 = "\n\t     + The first cluster in FAT32 RDET:  "+str(self.BPB_RootStartClus)
         # print("Cluter bắt đầu bảng RDET(!!!!): ", self.BPB_RootStartClus)
 
-        str23 = '\n\t\t+ The sector number of the file system information sector:  '+str(self.BPB_FSInfo)
+        str23 = '\n\t     + The sector number of the file system information sector:  '+str(self.BPB_FSInfo)
         # print("Sector chứa thông tin phụ(!!!):", self.BPB_FSInfo)
 
-        str24 = '\n\t\t+ The sector number of the backup boot sector:  '+str(self.BPB_BackupBootSec)
+        str24 = '\n\t     + The sector number of the backup boot sector:  '+str(self.BPB_BackupBootSec)
         # print("Sector chứa bản lưu của BS(!!!): ",self.BPB_BackupBootSec)
 
-        str25 = '\n\t\t+ Reversed number:  '+str(self.BPB_Reserved)
+        str25 = '\n\t     + Reversed number:  '+str(self.BPB_Reserved)
         # print("Dành riêng cho phiên bản sau: ",self.BPB_Reserved)
 
         return str1+str2+str3+str4+str5+str6+str7+str8+str9+str10 \
