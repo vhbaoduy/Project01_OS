@@ -70,14 +70,14 @@ class MFTAttr(RawStruct):
 
         return constructors[attr_type](data)
 
-    def __str__(self):
-        name = "N/A"
-        resident = "Resident"
-        if hasattr(self.header, 'attr_name'):
-            name = self.header.attr_name
-        if (self.header.non_resident_flag):
-            resident = "Non-Resident"
-        return "Type: %s Name: %s %s Size: %d" % (self.type_str, name, resident,self.header.length)
+    # def __str__(self):
+    #     name = "N/A"
+    #     resident = "Resident"
+    #     if hasattr(self.header, 'attr_name'):
+    #         name = self.header.attr_name
+    #     if (self.header.non_resident_flag):
+    #         resident = "Non-Resident"
+    #     return "Type: %s Name: %s %s Size: %d" % (self.type_str, name, resident,self.header.length)
 
 class MFTAttrStandardInformation(MFTAttr):
     def __init__(self, data):
@@ -165,9 +165,7 @@ class MFTAttrFilename(MFTAttr):
         self.reparse = self.get_uint(offset + 0x3C)
         self.fnamength = self.get_uchar(offset + 0x40)
         self.fnspace = self.get_uchar(offset + 0x41)
-        self.fname = self.get_chunk(offset + 0x42, 2 *
-                                    self.fnamength).decode('utf-16')
-        # print(self.fname)
+        self.fname = self.get_chunk(offset + 0x42, 2 * self.fnamength).decode('utf-16')
     
     def ctime_dt(self):
         return filetime_to_dt(self.ctime)

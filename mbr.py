@@ -32,6 +32,8 @@ class RawStruct(object):
         return struct.unpack("<I", self.data[offset:offset + 4])[0]
     def get_ulonglong(self, offset):
         return struct.unpack("<Q", self.data[offset:offset + 8])[0]
+    def get_ulonglong_b(self, offset):
+        return struct.unpack(">Q", self.data[offset:offset + 8])[0]
     def get_string(self, offset, length):
         return struct.unpack(str(length) + "s", self.data[offset:offset + length])[0]
 
