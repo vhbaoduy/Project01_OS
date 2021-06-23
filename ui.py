@@ -1,5 +1,5 @@
 from boot_sector_fat32 import *
-from partition_boot_sector_ntfs import *
+# from partition_boot_sector_ntfs import *
 from mbr import *
 import tkinter
 from tkinter import *
@@ -190,16 +190,16 @@ class App(Frame):
         parent_iid = self.tree.parent(item)
         if parent_iid:
             temp = self.tree.item(parent_iid)['text']
-            print(temp)
+            # print(temp)
             return self.getPath(parent_iid, "\\"+self.tree.item(item, "text")+path)
         return "\\"+self.tree.item(item, "text")+path
-    def OnDoubleClick(self, text):
+    def OnDoubleClick(self, event):
         item = self.tree.selection()
         print("you clicked on", self.tree.item(item, "text"))
         path = ''
         # path = '\\'+ self.tree.item(item, "text")
         path = self.getPath(item, path)
-        path = path[5:len(path)]
+        path = path[1:len(path)]
         path = open(path, 'r', encoding='utf-8')
         data = path.read()
         path.close()
@@ -217,12 +217,13 @@ class App(Frame):
         path = ''
         # path = '\\'+ self.tree.item(item, "text")
         path = self.getPath(item, path)
-        path = path[5:len(path)]
-        path = open(path, 'r', encoding='utf-8')
-        data = path.read()
-        path.close()
-        text.delete("1.0", END)
-        text.insert(END, data)
+        path = path[1:len(path)]
+        print(path)
+        # path = open(path, 'r', encoding='utf-8')
+        # data = path.read()
+        # path.close()
+        # text.delete("1.0", END)
+        # text.insert(END, data)
 
     def insertDirectory(self,root,disk):
         id = self.tree.insert('', 'end', text=disk, open=False)
@@ -293,15 +294,17 @@ class App(Frame):
         frame_left.columnconfigure(0, weight=1)
         frame_left.rowconfigure(0, weight=1)
         # right-side widget layout
-        text.pack(padx=10,pady=10, fill="both")
+        text.pack(padx=10, pady=10, fill="both")
 
         self.tree.configure(yscrollcommand=lambda f, l: self.autoscroll(ysb, f, l),
                             xscrollcommand=lambda f, l: self.autoscroll(xsb, f, l))
 
-        self.insertDirectory(myTree.getRoot(),path)
+        # print(path[4:len(path)])
+
+        self.insertDirectory(myTree.getRoot(),path[4:len(path)])
 
         self.tree.bind('<<TreeviewOpen>>', self.handleOpenEvent)
-        self.tree.bind("<Double-1>", lambda envent: self.OnDoubleClick(text))
+        self.tree.bind("<Double-1>", self.OnDoubleClick)
         self.tree.bind("<ButtonRelease-1>", lambda envent: self.OnSelection(text))
 
     def callback(self,eventObject):
