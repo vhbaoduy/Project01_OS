@@ -203,6 +203,24 @@ class App(Frame):
         path = open(path, 'r', encoding='utf-8')
         data = path.read()
         path.close()
+        window = Tk()
+        window.title(self.tree.item(item, "text"))
+        window.geometry("300x300+300+300")
+        text = Text(window, font=("Cambria", 12), bg="white", spacing1=4, relief=FLAT)
+        text.insert(END, data)
+        text.pack()
+        window.mainloop()
+
+    def OnSelection(self, text):
+        item = self.tree.selection()
+        print("you clicked on", self.tree.item(item, "text"))
+        path = ''
+        # path = '\\'+ self.tree.item(item, "text")
+        path = self.getPath(item, path)
+        path = path[5:len(path)]
+        path = open(path, 'r', encoding='utf-8')
+        data = path.read()
+        path.close()
         text.delete("1.0", END)
         text.insert(END, data)
 
@@ -229,9 +247,6 @@ class App(Frame):
 
     def Directory(self, selected_drive, frame):
         drive = selected_drive.get()
-        path = "\\\.\\"
-        for i in range(0, len(drive) - 1):
-            path += drive[i]
         #get tree information
         if (win32api.GetVolumeInformation(drive)[4]=='FAT32'):
             path = "\\\.\\"
@@ -259,7 +274,7 @@ class App(Frame):
         splitter = tk.PanedWindow(frame, orient=tk.HORIZONTAL)
         # Left-side
         frame_left = tk.Frame(splitter)
-        self.tree = ttk.Treeview(frame_left)
+        self.tree = ttk.Treeview(frame_left, selectmode='browse')
         ysb = ttk.Scrollbar(frame_left, orient='vertical', command=self.tree.yview)
         xsb = ttk.Scrollbar(frame_left, orient='horizontal', command=self.tree.xview)
         # Right-side
@@ -287,6 +302,7 @@ class App(Frame):
 
         self.tree.bind('<<TreeviewOpen>>', self.handleOpenEvent)
         self.tree.bind("<Double-1>", lambda envent: self.OnDoubleClick(text))
+        self.tree.bind("<ButtonRelease-1>", lambda envent: self.OnSelection(text))
 
     def callback(self,eventObject):
          return eventObject.widget.get()
