@@ -157,8 +157,6 @@ class App(Frame):
             for i in range(0, len(drive) - 1):
                 path += drive[i]
             data = BootSectorFAT32().readBootSector(path)
-            # pbr_fat = PbrFat(data)
-            # pbr_fat.readFat()
             mbr = Mbr(data)
             txt = mbr.showInforOfPart()
             text = Text(frame, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
@@ -171,7 +169,6 @@ class App(Frame):
             for i in range(0, len(drive) - 1):
                 path += drive[i]
             boots = BootSectorNTFS(None, 0, 512, path)
-            # txt = boots.show_infor()
             mbr = Mbr(boots.data_boot())
             txt = mbr.showInforOfPart()
             text = Text(frame, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
@@ -235,14 +232,26 @@ class App(Frame):
         path = "\\\.\\"
         for i in range(0, len(drive) - 1):
             path += drive[i]
-
-        bootSectorData = BootSectorFAT32().readBootSector(path)
-        pbr_fat = PbrFat(bootSectorData)
-        pbr_fat.readFat()
-        fat_table = FatTable(path, pbr_fat)
-        dir = fat_table.getRootDirectory()
-        fat_table.getDirectory(dir)
-        myTree = Root(fat_table.getDir())
+        #get tree information
+        if (win32api.GetVolumeInformation(drive)[4]=='FAT32'):
+            path = "\\\.\\"
+            for i in range(0, len(drive) - 1):
+                path += drive[i]
+            bootSectorData = BootSectorFAT32().readBootSector(path)
+            pbr_fat = PbrFat(bootSectorData)
+            pbr_fat.readFat()
+            fat_table = FatTable(path, pbr_fat)
+            dir = fat_table.getRootDirectory()
+            fat_table.getDirectory(dir)
+            myTree = Root(fat_table.getDir())
+        if (win32api.GetVolumeInformation(selected_drive.get())[4]=='NTFS'):
+            path = "\\\.\\"
+            for i in range(0, len(drive) - 1):
+                path += drive[i]
+            boots = BootSectorNTFS(None, 0, 512, path)
+            MFTable = MFT(filename=path, offset=boots.mft_offset)
+            MFTable.preload_entries(20)
+            myTree = Root(MFTable.entries)
 
         list = frame.pack_slaves()
         for l in list:

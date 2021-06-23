@@ -1,6 +1,5 @@
 from mbr import *
 from mft_attribute_ntfs import *
-from anytree import Node, RenderTree
 from directory_ntfs import *
 BPB_SIZE = 25
 BPB_OFFSET = 0x0B
