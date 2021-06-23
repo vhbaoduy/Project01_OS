@@ -196,12 +196,12 @@ class FatTable():
     def getClusterList(self):
         return self.fats
     def getRootDirectory(self):
-        return Directory(open(self.disk,'rb'),self,self.pbr_fat,self.disk+"/",0)
+        return Directory(open(self.disk,'rb'),self,self.pbr_fat,self.disk+"\\",0)
     def getDirectory(self,rootDirectory):
         dirEntries = rootDirectory.getDirectoryEntries()
         if len(dirEntries) > 0:
             for entry in dirEntries:
-                dir = Directory(open(self.disk,'rb'),self,self.pbr_fat,entry.getPath()+"/",rootDirectory.getDepth()+1,entry.getFirstStartSector())
+                dir = Directory(open(self.disk,'rb'),self,self.pbr_fat,entry.getPath()+"\\",rootDirectory.getDepth()+1,entry.getFirstStartSector())
                 self.directoryTree.append(dir)
                 self.getDirectory(dir)
 
@@ -220,7 +220,7 @@ class FatTable():
 
 
 if __name__ == "__main__":
-    disk = r"\\.\G:"
+    disk = r"\\.\H:"
 
     bootSectorData = BootSectorFAT32().readBootSector(disk)
     pbr_fat = PbrFat(bootSectorData)
@@ -232,7 +232,7 @@ if __name__ == "__main__":
     entries = root.getNodeList()
     for v in entries:
         if not v.isEmpty():
-            print(v.getFileName())
+            print(v.getProperty())
 
 
 

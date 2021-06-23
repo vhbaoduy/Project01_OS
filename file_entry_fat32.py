@@ -205,11 +205,11 @@ class ShortFileNameEntry():
         else:
             return self.getFullShortName()
 
-    def getFirstSectorStart(self, startSector):
+    def getFirstSectorStart(self):
         return self.firstStartSector
     def getPropertyEntry(self):
         property = ""
-        property+= "\nPath: "+ self.path
+        property+= "Path: "+ self.path[4:]
         property+="\nFile name: "+ self.getFileName()
         property +="\nAttribute: "
         if (self.attribute == READ_ONLY):
@@ -234,10 +234,11 @@ class ShortFileNameEntry():
         property += "\nFilesize: " + str(self.fileSize) + " (bytes)"
         property += "\nEntry count: " + str(self.entryCount)
         property += "\n[Start Sector - End Sector]: " + str(self.firstStartSector) + " - " + str(self.lastSector)
+        return property
 
     def stringOfOutput(self):
         output = "-----------------"
-        output += "\nPath: " + self.path
+        output += "\nPath: " + self.path[4:]
         output += "\nOffset Entry in Data Area: " + str(self.id)
         # output += "\nLong filename: " + self.longFileName
         output += "\nShort filename: " + self.getFileName()

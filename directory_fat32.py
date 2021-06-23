@@ -2,11 +2,6 @@ from file_entry_fat32 import *
 import struct
 import sys
 from collections import deque
-def formatString(n):
-    s =""
-    for i in range(n):
-        s+="\t"
-    return s
 class Directory(object):
     def __init__(self,file,fatTable,pbrFat,path,depth,startSector = None):
         # pointer in file
@@ -155,9 +150,9 @@ class Directory(object):
     def show(self,depth):
         print(self.path)
         for entry in self.getDirectoryAndFileEntries():
-            # out = entry.stringOfOutput()
-            # print(out)
-            print(formatString(depth)+entry.getFileName())
+            out = entry.stringOfOutput()
+            print(out)
+            # print(formatString(depth)+entry.getFileName())
 
 
 class Node():
@@ -187,6 +182,7 @@ class Root():
     def __init__(self,directory):
         self.directory = directory
         self.root = Node()
+        self.rootPath = self.directory[0].getPath()[4:6]
 
         #RDET
         self.addRDET()
@@ -204,13 +200,14 @@ class Root():
                 self.insertNode(self.root,v)
     def insertNode(self,root,entry):
         if (not root.isEmpty()):
-            if root.getPath() + "/" + entry.getFileName() == entry.getPath() :
+            if root.getPath() + "\\" + entry.getFileName() == entry.getPath() :
                 return root.addChildren(Node(entry, root))
         if (len(root.getChildrenList()) > 0):
             childs = root.getChildrenList()
             for child in childs:
                 if child.isDirectory():
                         self.insertNode(child,entry)
+
     def transfer(self,root):
         if (len(root.getChildrenList()) > 0):
             childs = root.getChildrenList()
@@ -224,6 +221,26 @@ class Root():
         return self.entries
     def getRoot(self):
         return self.root
+
+    def getPropertyFromPath(self, path):
+        if path == self.rootPath:
+            folder, file = self.getNumberOfFoldersAndFiles()
+            property = "Contains: " + str(folder) + " Fodlders, " + str(file) + " Files\n"
+            return property
+        else:
+            property = None
+            for v in self.entries[1:]:
+                if v.getPath()[4:] == path:
+                    property = v.getProperty()
+                    break
+            return property
+
+    def getNumberOfFoldersAndFiles(self):
+        folder, file = 0, 0
+        for v in self.directory:
+            folder += len(v.getDirectoryEntries())
+            file += len(v.getArchiveFileEntries())
+        return folder, file
 
 
 

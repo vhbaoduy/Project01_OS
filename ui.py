@@ -23,8 +23,12 @@ class App(Frame):
     def __init__(self, parent):
         Frame.__init__(self, parent)
 
+        ### root
+        self.treeOfDirectory = None
+
         self.parent = parent
         self.initUI()
+
 
     def Tab1(self, tab1):
 
@@ -218,12 +222,13 @@ class App(Frame):
         # path = '\\'+ self.tree.item(item, "text")
         path = self.getPath(item, path)
         path = path[1:len(path)]
-        print(path)
+        property = self.treeOfDirectory.getPropertyFromPath(path)
         # path = open(path, 'r', encoding='utf-8')
         # data = path.read()
         # path.close()
-        # text.delete("1.0", END)
-        # text.insert(END, data)
+        # print(property)
+        text.delete("1.0", END)
+        text.insert(END, property)
 
     def insertDirectory(self,root,disk):
         id = self.tree.insert('', 'end', text=disk, open=False)
@@ -259,7 +264,7 @@ class App(Frame):
             fat_table = FatTable(path, pbr_fat)
             dir = fat_table.getRootDirectory()
             fat_table.getDirectory(dir)
-            myTree = Root(fat_table.getDir())
+            self.treeOfDirectory = Root(fat_table.getDir())
         if (win32api.GetVolumeInformation(selected_drive.get())[4]=='NTFS'):
             path = "\\\.\\"
             for i in range(0, len(drive) - 1):
@@ -301,7 +306,7 @@ class App(Frame):
 
         # print(path[4:len(path)])
 
-        self.insertDirectory(myTree.getRoot(),path[4:len(path)])
+        self.insertDirectory(self.treeOfDirectory.getRoot(),path[4:len(path)])
 
         self.tree.bind('<<TreeviewOpen>>', self.handleOpenEvent)
         self.tree.bind("<Double-1>", self.OnDoubleClick)
