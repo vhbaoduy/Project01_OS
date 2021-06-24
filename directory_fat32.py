@@ -1,7 +1,6 @@
 from file_entry_fat32 import *
 import struct
 import sys
-from collections import deque
 class Directory(object):
     def __init__(self,file,fatTable,pbrFat,path,depth,startSector = None):
         # pointer in file
@@ -22,8 +21,7 @@ class Directory(object):
         self.path = path
         self.readAllEntry()
         self.depth = depth
-    # def isEmpty(self):
-    #     return self.clusterList[0] == 0x00
+
     def readAllEntry(self):
         index = 0
         while(self.isDirectionEntry(index)):
@@ -147,12 +145,6 @@ class Directory(object):
             return True,len(entry)
         else:
             return False,0
-    def show(self,depth):
-        print(self.path)
-        for entry in self.getDirectoryAndFileEntries():
-            out = entry.stringOfOutput()
-            print(out)
-            # print(formatString(depth)+entry.getFileName())
 
 
 class Node():
@@ -177,7 +169,6 @@ class Node():
         return self.entry.getPath()
     def getParent(self):
         return self.parent
-
 class Root():
     def __init__(self,directory):
         self.directory = directory
@@ -234,7 +225,6 @@ class Root():
                     property = v.getProperty()
                     break
             return property
-
     def getNumberOfFoldersAndFiles(self):
         folder, file = 0, 0
         for v in self.directory:

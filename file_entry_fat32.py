@@ -4,11 +4,8 @@ import datetime
 def readByte(data,offset,length):
     return data[offset:offset+length]
 def getDateTimeFromDosTime(dosDate, dosTime,dosTenthOfSecond):
-
     creationYear = readBitsFromByte(dosDate, 16, 7) + 1980
     creationMonth = readBitsFromByte(dosDate, 9, 4)
-    # if (creationMonth == 0):
-    #     creationMonth+=1 # :))
     creationDay = readBitsFromByte(dosDate, 5, 5)
     creationHour = readBitsFromByte(dosTime, 16, 5)
     creationMinute = readBitsFromByte(dosTime, 11, 6)
@@ -17,16 +14,6 @@ def getDateTimeFromDosTime(dosDate, dosTime,dosTenthOfSecond):
     return datetime.datetime(creationYear, creationMonth, creationDay, creationHour, creationMinute, creationSecond, creationMicroSecond)
 def readBitsFromByte(value, startIndex, bitCount):
     return (value & (2**startIndex -1)) >> (startIndex - bitCount)
-
-# name in long file name
-def decodeUTF8(name):
-    name = bytearray(name)
-    stringName = ""
-    for i in range(0, len(name) - 1, 2):
-        if name[i] != 0xff and name[i] != 0x00:
-            stringName += bytes(name[i]).decode('utf-8')
-    return stringName
-
 READ_ONLY = 0x01
 HIDDEN_FILE = 0x02
 SYSTEM_FILE = 0x04
@@ -48,15 +35,13 @@ class LongFileNameEntry():
     def readDirectionLongEntry(self,data):
         self.order = int.from_bytes(data[0x00:0x0+1],byteorder='little')
         self.name1 = data[0x01:0x01+10].decode('utf-16')
-        # self.name1 = bin(int.from_bytes(data[0x01:0x01+10],byteorder='little'))
         self.attribute = int.from_bytes(data[0x0b:0x0b+1],byteorder='little')
         self.type = int.from_bytes(data[0x0c:0x0c+1],byteorder='little')
         self.checkSum = int.from_bytes(data[0x0d:0x0d+1],byteorder='little')
         self.name2 = data[0x0e:0x0e+12].decode('utf-16')
-        # self.name2 = bin(int.from_bytes(data[0x0e:0x0e + 12], byteorder='little'))
+
         self.fstClusLO = int.from_bytes(data[0x1a:0x1a+2],byteorder='little')
         self.name3 = data[0x1c:0x1c+4].decode('utf-16').strip(b'\xff\xff'.decode('utf-16'))
-        # self.name1 = bin(int.from_bytes(data[0x1c:0x1c + 4], byteorder='little'))
 
     def getFileName(self):
         fileName = (self.name1 + self.name2 + self.name3).strip(b'\xff\xff'.decode('utf-16'))
@@ -170,7 +155,6 @@ class ShortFileNameEntry():
         self.firstClusterNumber = firstCluster
     def setFirstStartSector(self,startSector):
         self.firstStartSector = startSector
-
     def setLastSector(self, lastSector):
         self.lastSector = lastSector
 
@@ -205,8 +189,10 @@ class ShortFileNameEntry():
         else:
             return self.getFullShortName()
 
-    def getFirstSectorStart(self):
+    def getFirstStartSector(self):
         return self.firstStartSector
+    def getLastSector(self):
+        return self.lastSector
     def getPropertyEntry(self):
         property = ""
         property+= "Path: "+ self.path[4:]
@@ -235,36 +221,6 @@ class ShortFileNameEntry():
         property += "\nEntry count: " + str(self.entryCount)
         property += "\n[Start Sector - End Sector]: " + str(self.firstStartSector) + " - " + str(self.lastSector)
         return property
-
-    def stringOfOutput(self):
-        output = "-----------------"
-        output += "\nPath: " + self.path[4:]
-        output += "\nOffset Entry in Data Area: " + str(self.id)
-        # output += "\nLong filename: " + self.longFileName
-        output += "\nShort filename: " + self.getFileName()
-        if (self.attribute == READ_ONLY):
-            output += "\n*READ ONLY*"
-        if (self.attribute == HIDDEN_FILE):
-            output += "\n*HIDDEN*"
-        if (self.attribute == SYSTEM_FILE):
-            output += "\n*SYSTEM*"
-        if (self.attribute == VOLUME_ID):
-            output += "\n*VOLUME ID*"
-        if (self.attribute == DIRECTORY):
-            output += "\n*DIRECTORY*"
-        if (self.attribute == ARCHIVE):
-            output += "\n*ARCHIVE*"
-        if (self.attribute == LONG_FILE_NAME):
-            output += "\n*LONG_FILE_NAME*"
-        output += "\nCreation time: " + self.creationTime.strftime('%d.%m.%Y %H:%M:%S:%f')
-        output += "\nLast Accessed time: " + self.accessedTime.strftime('%d.%m.%Y')
-        output += "\nModification time: " + self.modificationTime.strftime('%d.%m.%Y %H:%M:%S')
-        output += "\nFirst cluster: " + str(self.firstClusterNumber)
-        output+= "\nNum cluster:" + str(self.numCluster)
-        output += "\nFilesize: " + str(self.fileSize)
-        output += "\nEntry count: " + str(self.entryCount)
-        output+= "\nStart Sector - End Sector: " + str(self.firstStartSector) + " - " + str(self.lastSector)
-        return output
 
 
 
