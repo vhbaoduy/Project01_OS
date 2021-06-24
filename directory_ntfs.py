@@ -1,14 +1,16 @@
 from partition_boot_sector_ntfs import *
 
-class Node():
-    def __init__(self,entry =None,parent = None, id=None):
+class NodeNTFS():
+    def __init__(self,entry =None,parent = None, id=None, path="", name=""):
         #type = entry
+        path+="\\"
+        self.path = path+name
         self.entry = entry
         self.parent = parent # node
         self.ID = id
         self.childs = []
     def getProperty(self):
-        return self.entry.getPropertyEntry()
+        return self.entry.getProperties()
     def isEmpty(self):
         return self.entry == None
     def addChildren(self,child):
@@ -22,59 +24,46 @@ class Node():
     def getID(self):
         return self.ID
     def getPath(self):
-        return self.entry.getPath()
+        return self.path
     def getParent(self):
         return self.parent
 
-class Root():
-    def __init__(self,directory):
+class RootNTFS():
+    def __init__(self,directory,path):
         self.directory = directory
-        self.root = Node()
+        self.root = NodeNTFS(path=path)
         self.entries = [self.root]
-        self.addRoot()
+        self.addRoot(path)
         self.addSRoot(self.root)
         self.transfer(self.root)
-    def addRoot(self):
+    def addRoot(self,path):
         for i in range(1, len(self.directory)):
             if self.directory[i].parent_ID==5 and self.directory[i].is_in_use():
-                self.root.addChildren(Node(self.directory[i], self.root, self.directory[i].getID()))
-                # print(self.directory[i].fname_str)
+                self.root.addChildren(NodeNTFS(self.directory[i], self.root, self.directory[i].getID(),path,self.directory[i].getFileName()))
     def addSRoot(self,root):
-        # print(len(root.getChildrenList()))
         if (len(root.getChildrenList()) > 0):
             childs = root.getChildrenList()
             for child in childs:
                 if child.isDirectory():
-                    # print(child.entry.fname_str)
                     for i in range(1, len(self.directory)):
                         if child.getID() == self.directory[i].parent_ID and self.directory[i].is_in_use():
-                            child.addChildren(Node(self.directory[i],child,self.directory[i].getID()))
-                            # print(self.directory[i].fname_str)
+                            child.addChildren(NodeNTFS(self.directory[i],child,self.directory[i].getID(), child.getPath(),self.directory[i].getFileName()))
                     self.addSRoot(child)
-                    # child2=child.getChildrenList()
-                    # for v in child2:
-                    #     if v.isDirectory():
-                    #         print(v.ID)
-                    #         self.addSRoot(v)
-    def insertNode(self,root,entry):
-        if (not root.isEmpty()):
-            if root.getPath() + "/" + entry.getFileName() == entry.getPath() :
-                return root.addChildren(Node(entry, root))
-        if (len(root.getChildrenList()) > 0):
-            childs = root.getChildrenList()
-            for child in childs:
-                if child.isDirectory():
-                        self.insertNode(child,entry)
     def transfer(self,root):
         if (len(root.getChildrenList()) > 0):
             childs = root.getChildrenList()
             for child in childs:
                 self.entries.append(child)
-                # print(child.getFileName())
                 if child.isDirectory():
                     self.transfer(child)
-        return
     def getNodeList(self):
         return self.entries
     def getRoot(self):
         return self.root
+    def getPropertyFromPath(self, path):
+        property = ""
+        for v in self.entries[1:]:
+            if v.getPath()[4:] == path:
+                property = "\nPath: " + v.getPath()[4:] +v.getProperty()
+                break
+        return property

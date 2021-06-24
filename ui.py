@@ -1,5 +1,5 @@
 from boot_sector_fat32 import *
-# from partition_boot_sector_ntfs import *
+from partition_boot_sector_ntfs import *
 from mbr import *
 import tkinter
 from tkinter import *
@@ -254,6 +254,7 @@ class App(Frame):
     def Directory(self, selected_drive, frame):
         drive = selected_drive.get()
         #get tree information
+        path=""
         if (win32api.GetVolumeInformation(drive)[4]=='FAT32'):
             path = "\\\.\\"
             for i in range(0, len(drive) - 1):
@@ -271,9 +272,9 @@ class App(Frame):
                 path += drive[i]
             boots = BootSectorNTFS(None, 0, 512, path)
             MFTable = MFT(filename=path, offset=boots.mft_offset)
-            MFTable.preload_entries(20)
-            myTree = Root(MFTable.entries)
-
+            MFTable.preload_entries()
+            # myTree = RootNTFS(MFTable.entries)
+            self.treeOfDirectory= RootNTFS(MFTable.entries,path)
         list = frame.pack_slaves()
         for l in list:
             l.destroy()

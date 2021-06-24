@@ -4,7 +4,16 @@ from directory_ntfs import *
 BPB_SIZE = 25
 BPB_OFFSET = 0x0B
 EXTENDED_BPB_SIZE = 48
-HEADER_SIZE=48
+HEADER_SIZE=56
+
+READ_ONLY=0x0001
+HIDDEN=0x0002
+SYSTEM=0x0004
+ARCHIVE=0x0020
+COMPRESSED=0x0800
+ENCRYPTED=0x4000
+DIRECTORY=0x10000000
+
 class BootSectorNTFS(RawStruct):
     def __init__(self, data=None, offset=None, length=None, filename=None):
         RawStruct.__init__(self, data=data, offset=offset, length=length, filename=filename)
@@ -103,34 +112,35 @@ class MFT(object):
         self.entry_size=entry_size
         self.filename=filename
         self.entries=[filename]
+        # self.entries = []
         # self.dir=[0 for i in range(100)]
         # self.dir[5]=Node("root")
     def get_entry(self,entry_id):
-        if entry_id in self.entries:
-            return self.entries[entry_id]
-        else:
-            entry_offset = entry_id * self.entry_size
-            # load entry
-            self.entry = MFTEntry(filename=self.filename,offset=self.offset + entry_offset,length=self.entry_size,index=entry_id)
-            # cache entry
-            # for attr in self.entry.attributes:
-            #     if attr.header.type == MFT_ATTR_FILENAME:
-            #         self.ID=attr.fname
+        entry_offset = entry_id * self.entry_size
+        # load entry
+        self.entry = MFTEntry(filename=self.filename, offset=self.offset + entry_offset, length=self.entry_size,
+                              index=entry_id)
+        # print(self.entry.property)
+        # print(self.entry.fname_str)
+        if self.entry.fname_str=="" or not self.entry.is_in_use():
+            return False
+        # self.dir[self.entry.header.ID]=Node(self.entry.fname_str,parent=self.dir[self.entry.parent_ID])
+        # print(self.entry.fname_str,self.entry.header.ID,self.entry.parent_ID)
+        self.entries.append(self.entry)
+        # print(self.entry.getProperties())
+        return True
 
-            # self.dir[self.entry.header.ID]=Node(self.entry.fname_str,parent=self.dir[self.entry.parent_ID])
-            print(self.entry.fname_str,self.entry.header.ID,self.entry.parent_ID)
-            # self.entry.attributes[0]
-            self.entries.append(self.entry)
-            return self.entry
-
-    def preload_entries(self, count):
-        for n in range(0, count):
-            self.get_entry(n)
+    def preload_entries(self):
+        n=0
+        while (self.get_entry(n)):
+            # print(n,self.entry.getProperties())
+            n += 1
         # for pre, fill, node in RenderTree(self.dir[5]):
         #     print("%s%s" % (pre, node.name))
         # for ent in self.entries:
-        #     print(ent.fname_str)
-
+        #     print(ent.getProperties())
+        # for ent in self.entries:
+        #     print(ent.getProperties())
 
 class MFTEntryHeader(RawStruct):
     def __init__(self,data):
@@ -147,7 +157,7 @@ class MFTEntryHeader(RawStruct):
         self.allocated_size=self.get_uint(28)
         self.file_ref_to_baseFile=self.get_ulonglong(32)
         self.next_attr=self.get_ushort(40)
-        self.ID=self.get_uint(44)
+        self.ID = self.get_uint(44)
 
 class MFTEntry(RawStruct):
     def __init__(self, data=None, offset=None, length=None, filename=None, index=None):
@@ -155,11 +165,20 @@ class MFTEntry(RawStruct):
         self.index=index
         self.attributes=[]
         self.fname_str=""
-        self.parent_ID=None
+        self.check_data=0
+        # self.flags=self.parent_ID=self.ctime =self.atime = self.mtime = self.rtime = self.real_size = self.flags = None
+        self.property=""
+        self.real_size=None
         self.header=MFTEntryHeader(self.get_chunk(0, HEADER_SIZE))
         self.load_attributes()
-        # print(self.fname_str,self.header.flags)
+        if self.check_data:
+            self.property += "\nFilesize: " + str(self.real_size) + " (bytes)"
 
+        # self.property += "\nFirst cluster: " + str(self.firstClusterNumber)
+        # self.property += "\nNum cluster:" + str(self.numCluster)
+
+        # self.property += "\nEntry count: " + str(self.entryCount)
+        # self.property += "\n[Start Sector - End Sector]: " + str(self.firstStartSector) + " - " + str(self.lastSector)
 
     def is_directory(self):
         return self.header.flags & 0x0002
@@ -178,13 +197,16 @@ class MFTEntry(RawStruct):
 
     def getID(self):
         return self.header.ID
+    def getProperties(self):
+        return self.property
     def get_attribute(self, offset):
         attr_type = self.get_uint(offset)
+        if attr_type==0xFFFFFFFF:
+            return None
         length = self.get_uint(offset + 0x04)
         data = self.get_chunk(offset, length)
-        a=MFTAttr.factory(attr_type, data)
-        # return MFTAttr.factory(attr_type, data)
-        return a
+        return MFTAttr.factory(attr_type, data)
+
     def lookup_attribute(self, attr_type_id):
         for attr in self.attributes:
             if attr.header.type == attr_type_id:
@@ -193,7 +215,7 @@ class MFTEntry(RawStruct):
 
 
     def load_attributes(self):
-        free_space = self.size - HEADER_SIZE
+        free_space = self.header.used_size - HEADER_SIZE
         offset= self.header.first_attr_offset
         while free_space > 0:
             attr = self.get_attribute(offset)
@@ -201,20 +223,35 @@ class MFTEntry(RawStruct):
                 if attr.header.type == MFT_ATTR_FILENAME:
                     self.fname_str = attr.fname
                     self.parent_ID = attr.parent_ref
-
+                    self.property += "\nFile name: " + attr.fname
+                    self.property += "\nAttribute: "
+                    if (attr.flags == READ_ONLY):
+                        self.property += "*READ ONLY*"
+                    if (attr.flags == HIDDEN):
+                        self.property += "*HIDDEN*"
+                    if (attr.flags == SYSTEM):
+                        self.property += "*SYSTEM*"
+                    if (attr.flags == ARCHIVE):
+                        self.property += "*ARCHIVE*"
+                    if (attr.flags == COMPRESSED):
+                        self.property += "*COMPRESSED*"
+                    if (attr.flags == ENCRYPTED):
+                        self.property += "*ENCRYPTED*"
+                    if (attr.flags == DIRECTORY):
+                        self.property += "*DIRECTORY*"
+                    self.property += "\nCreation time: " + attr.ctime_dt().strftime('%d.%m.%Y %H:%M:%S')
+                    self.property += "\nModification time: " + attr.mtime_dt().strftime('%d.%m.%Y %H:%M:%S')
+                    self.property += "\nLast Accessed time: " + attr.atime_dt().strftime('%d.%m.%Y %H:%M:%S')
+                if attr.header.type == MFT_ATTR_DATA:
+                    if self.check_data==0:
+                        self.real_size = attr.header.real_size
+                    self.check_data+=1
+                    # print(attr.first_cluster,attr.cluster_count)
                 self.attributes.append(attr)
                 free_space = free_space - attr.header.length
                 offset = offset + attr.header.length
             else:
                 break
-
-    # def __str__(self):
-    #     result = ("File: %d\n%s (%s)" % (self.index, self.name_str, self.fname_str))
-    #
-    #     for attr in self.attributes:
-    #         result = result + "\n\t" + str(attr)
-    #     return result
-
 
 def NTFS():
     boots = BootSectorNTFS(None, 0, 512, r"\\.\E:")
@@ -227,10 +264,10 @@ def NTFS():
 if __name__ == "__main__":
     boots = BootSectorNTFS(None, 0, 512, r"\\.\E:")
     MFTable=MFT(filename=r"\\.\E:",offset=boots.mft_offset)
-    MFTable.preload_entries(20)
+    MFTable.preload_entries()
     print("-------------")
-    root=Root(MFTable.entries)
+    root=RootNTFS(MFTable.entries,r"\\.\E:")
     entries = root.getNodeList()
-    for v in entries:
-        if not v.isEmpty():
-            print(v.getFileName())
+    # for v in entries:
+    #     if not v.isEmpty():
+    #         print(v.getFileName())
