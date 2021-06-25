@@ -1,6 +1,8 @@
 from mbr import *
 from mft_header_ntfs import *
 from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
 MFT_ATTR_STANDARD_INFORMATION = 0x10
 MFT_ATTR_ATTRIBUTE_LIST = 0x20
 MFT_ATTR_FILENAME = 0x30
@@ -152,7 +154,6 @@ class MFTAttrFilename(MFTAttr):
         self.type_str = "$FILE_NAME"
 
         offset = self.header.size
-        # print(offset)
         self.parent_ref = struct.unpack("<hi", self.data[offset:offset + 6])[0]
         self.ctime = self.get_ulonglong(offset + 0x08)
         self.atime = self.get_ulonglong(offset + 0x10)
@@ -166,7 +167,6 @@ class MFTAttrFilename(MFTAttr):
         self.fnamength = self.get_uchar(offset + 0x40)
         self.fnspace = self.get_uchar(offset + 0x41)
         self.fname = self.get_chunk(offset + 0x42, 2 * self.fnamength).decode('utf-16')
-    
     def ctime_dt(self):
         return filetime_to_dt(self.ctime)
 
@@ -229,7 +229,9 @@ class MFTAttrData(MFTAttr):
     def __init__(self, data):
         MFTAttr.__init__(self, data)
         self.type_str = "$DATA"
-
+        offset = self.header.size
+        # self.cluster_count=self.get_ushort(offset + 0x01)
+        # self.first_cluster=self.get_ushort(offset+0x03)
 
 class MFTAttrIndexRoot(MFTAttr):
     def __init__(self, data):
@@ -266,7 +268,9 @@ def filetime_to_dt(ft):
     # Get seconds and remainder in terms of Unix epoch
     (s, ns100) = divmod(ft - EPOCH_AS_FILETIME, HUNDREDS_OF_NANOSECONDS)
     # Convert to datetime object
-    dt = datetime.utcfromtimestamp(s)
+    dt=datetime.fromtimestamp(s, tz=timezone.utc)+ timedelta(hours=7)
+    # dt=datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(hours=1)
+    # dt = datetime.fromtimestamp(s, datetime.timezone.utc)
     # Add remainder in as microseconds. Python 3.2 requires an integer
-    dt = dt.replace(microsecond=(ns100 // 10))
+    # dt = dt.replace(microsecond=(ns100 // 10))
     return dt

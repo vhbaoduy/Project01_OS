@@ -57,85 +57,30 @@ class PbrFat():
 
     def showInfo(self):
         str1 = '\tJump instrution  '+self.BS_jmpBoot
-        # print("Lệnh nhảy qua vùng thông số: ", self.BS_jmpBoot)
-
         str2 = '\n\tOEM ID:  ' + self.BS_OEM_Name
-        # print("OEM ID: ", self.BS_OEM_Name)
-
         str3 = '\n\tBytes per Sector:  '+str(self.BPB_BytesPerSec)
-        # print("Số bytes trên Sector: ", self.BPB_BytesPerSec)
-
         str4 = '\n\tSectors Per Cluster (Sc):  '+str(self.BPB_SecPerClus)
-        # print("Số Sector trên Cluster (SC): ",self.BPB_SecPerClus)
-
         str5 = '\n\tReserved Sectors:  '+str(self.BPB_RsvdSecCnt)
-        # print("Số Sector thuộc vùng BootSector(SB): ", self.BPB_RsvdSecCnt)
-
         str6 = '\n\tNumber of FATs (Nf):  '+str(self.BPB_NumFATs)
-        # print("Số bảng FAT(NF): ",self.BPB_NumFATs)
-
         str7 = '\n\tRoot entries:  '+str(self.BPB_RootEntCnt)
-        # print("Số Entry của RDET: ", self.BPB_RootEntCnt)
-
-        # str8 = '\nSmall sectors: '+str(self.BPB_ToatalSec16)
-        # print("Số Sector của Vol: ", self.BPB_ToatalSec16)
-
         str8 = '\n\tMedia type:  '+str(self.BPB_Media)
-        # print("Loại thiết bị: ",self.BPB_Media)
-
-        # str10 = '\nSectors per FAT: '+str(self.BPB_FATSz16)
-        # print("Số sector của bảng FAT: ",self.BPB_FATSz16)
-
         str9 = '\n\tSectors per Track:  '+str(self.BPB_SecPerTrack)
-        # print("Số sector của track: ", self.BPB_SecPerTrack)
-
         str10 = '\n\tNumbers of Heads:  '+str(self.BPB_NumHeads)
-        # print("Số lượng đầu đọc: ",self.BPB_NumHeads)
-
         str11 = '\n\tHidden Sectors:  '+str(self.BPB_HiddSec)
-        # print("Khoảng cách từ nơi mô tả vol đền đầu vol: ", self.BPB_HiddSec)
-
         str12 = '\n\tSize of the partition, in sectors:  '+str(self.BPB_TotalSec32)
-        # print("Kích thước Volume(SV): ",self.BPB_TotalSec32)
-
         str13 = '\n\tSectors per FAT:  '+str(self.BPB_FATsz32)
-        # print("Kích thước bảng FAT(SF):",self.BPB_FATsz32 )
-
         str14 = '\n\tPhysical Disk Number:  '+str(self.BS_DriveNum)
-        # print("Kí hiệu vật lý: ", self.BS_DriveNum)
-
         str15 = '\n\tReserve (for Windows NT):  '+str(self.BS_Revervedl)
-        # print("Dành riêng ", self.BS_Revervedl)
-
         str16 = '\n\tBoot Signature:  '+str(self.BS_BootSig)
-        # print("Kí hiệu nhận diện HĐH: ",self.BS_BootSig)
-
         str17 = '\n\tVolume Serial Number:  '+str(self.BS_VolumeID)
-        # print("SerialNumber của Volumne: ",self.BS_VolumeID)
-
         str18 = '\n\tVolume Label:  '+str(self.BS_VolumLabel)
-        # print("Volume Label: ", self.BS_VolumLabel)
-
         str19 = '\n\tSystem ID: '+str(self.BS_FileSysType)
-        # print("Loại FAT: ", self.BS_FileSysType)
-
         str20 = '\n\tFlags describing the drive:  '+str(self.BPB_ExtFlags)
-        # print("----: ",self.BPB_ExtFlags)
-
         str21 = '\n\t     + Version of FAT32:  '+str(self.BPB_FSver)
-        # print("Version: ", self.BPB_FSver)
-
         str22 = "\n\t     + The first cluster in FAT32 RDET:  "+str(self.BPB_RootStartClus)
-        # print("Cluter bắt đầu bảng RDET(!!!!): ", self.BPB_RootStartClus)
-
         str23 = '\n\t     + The sector number of the file system information sector:  '+str(self.BPB_FSInfo)
-        # print("Sector chứa thông tin phụ(!!!):", self.BPB_FSInfo)
-
         str24 = '\n\t     + The sector number of the backup boot sector:  '+str(self.BPB_BackupBootSec)
-        # print("Sector chứa bản lưu của BS(!!!): ",self.BPB_BackupBootSec)
-
         str25 = '\n\t     + Reversed number:  '+str(self.BPB_Reserved)
-        # print("Dành riêng cho phiên bản sau: ",self.BPB_Reserved)
 
         return str1+str2+str3+str4+str5+str6+str7+str8+str9+str10 \
             +str11+str12+str13+str14+str15+str16+str17+str18+str19+str20 \
@@ -181,27 +126,22 @@ class FatTable():
         self.cluster = []
         self.fats = []
         self.readData()
-        # self.readFatTable()
 
         self.directoryTree = [self.getRootDirectory()]
     def readData(self):
         fatStart, fatSector = self.pbr_fat.getFatTableInfor()
         self.data = readDataFromDisk(self.disk,fatStart,fatSector)
-    # def readFatTable(self):
-    #     for i in range(0,len(self.data),4):
-    #         fat = int.from_bytes(self.data[i:i+4],byteorder='little')
-    #         self.fats.append(fat)
     def getValueOfCluster(self,index):
         return int.from_bytes(self.data[index:index+4],byteorder='little')
     def getClusterList(self):
         return self.fats
     def getRootDirectory(self):
-        return Directory(open(self.disk,'rb'),self,self.pbr_fat,self.disk+"/",0)
+        return Directory(open(self.disk,'rb'),self,self.pbr_fat,self.disk+"\\",0)
     def getDirectory(self,rootDirectory):
         dirEntries = rootDirectory.getDirectoryEntries()
         if len(dirEntries) > 0:
             for entry in dirEntries:
-                dir = Directory(open(self.disk,'rb'),self,self.pbr_fat,entry.getPath()+"/",rootDirectory.getDepth()+1,entry.getFirstStartSector())
+                dir = Directory(open(self.disk,'rb'),self,self.pbr_fat,entry.getPath()+"\\",rootDirectory.getDepth()+1,entry.getFirstStartSector())
                 self.directoryTree.append(dir)
                 self.getDirectory(dir)
 
@@ -213,26 +153,8 @@ class FatTable():
         return folder,file
     def getDir(self):
         return self.directoryTree
-    def show(self):
-        for v in self.directoryTree:
-            v.show(v.getDepth())
 
 
-
-if __name__ == "__main__":
-    disk = r"\\.\G:"
-
-    bootSectorData = BootSectorFAT32().readBootSector(disk)
-    pbr_fat = PbrFat(bootSectorData)
-    pbr_fat.readFat()
-    fat_table = FatTable(disk,pbr_fat)
-    dir = fat_table.getRootDirectory()
-    fat_table.getDirectory(dir)
-    root= Root(fat_table.getDir())
-    entries = root.getNodeList()
-    for v in entries:
-        if not v.isEmpty():
-            print(v.getFileName())
 
 
 
