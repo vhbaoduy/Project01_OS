@@ -95,7 +95,7 @@ class App(Frame):
     def Boot_Sector(self,selected_drive, frame):
         drive = selected_drive.get()
         if drive=="":
-            tkinter.messagebox.showwarning(title="Warning", message="No drive was chosen! Please choose a drive.")
+            tkinter.messagebox.showerror(title="Error", message="No drive was chosen! Please choose a drive.")
             return
         print(drive)
         list = frame.pack_slaves()
@@ -171,9 +171,9 @@ class App(Frame):
             try:
                 extension=getApp[file_extension]
             except:
-                tkinter.messagebox.showwarning(title="Warning",message="Couldn't find the appropriate app to open this file")
+                tkinter.messagebox.showwarning(title="Warning",message="Couldn't find the appropriate app to open this file.")
             else:
-                msgBox=tkinter.messagebox.askyesno (title="Recommend application", message="This file can be opened with "+extension)
+                msgBox=tkinter.messagebox.askyesno (title="Recommend application", message="This file can be opened with "+extension+".")
                 if msgBox:
                     os.system(path)
 
@@ -215,7 +215,7 @@ class App(Frame):
     def Directory(self, selected_drive, frame):
         drive = selected_drive.get()
         if drive == "":
-            tkinter.messagebox.showwarning(title="Warning", message="No drive was chosen! Please choose a drive.")
+            tkinter.messagebox.showerror(title="Error", message="No drive was chosen! Please choose a drive.")
             return
 
         window = tkinter.Toplevel()
