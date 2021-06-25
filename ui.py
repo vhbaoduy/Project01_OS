@@ -3,7 +3,7 @@ from partition_boot_sector_ntfs import *
 from mbr import *
 import tkinter
 from tkinter import *
-from tkinter import Tk, Text, TOP, BOTH, X, N, LEFT, scrolledtext
+from tkinter import Tk, Text, TOP, BOTH, X, N, LEFT, scrolledtext, messagebox
 from tkinter import Frame, Label, Entry
 import tkinter as tk
 from tkinter import ttk
@@ -12,12 +12,6 @@ import win32api
 import os
 from tkinter import filedialog
 import win32file
-
-# drives = win32api.GetLogicalDriveStrings()
-# drives = drives.split('\000') [:-1]
-
-
-
 
 class App(Frame):
     def __init__(self, parent):
@@ -74,57 +68,15 @@ class App(Frame):
         label.image = icon
         label.pack(anchor='s',side =RIGHT, padx=20, pady=10)
 
-    # label.pack(side=RIGHT,anchor='se', padx=20, pady=10 )
-
-    # def FAT32(self, drive, frame):
-    #     path="\\\.\\"
-    #     for i in range (0, len(drive)-1):
-    #         path += drive[i]
-    #
-    #     label = Label(frame, text="BIOS Parameter Block information", font=("Georgia", 10), bg="#fffbe6")
-    #     label.pack(anchor=N, padx=5, pady=5)
-    #
-    #     data = BootSectorFAT32().readBootSector(path)
-    #     pbr_fat = PbrFat(data)
-    #     pbr_fat.readFat()
-    #     txt = pbr_fat.showInfo()
-    #     text = Text(frame, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
-    #     text.delete('1.0', "end")
-    #     text.insert(END, txt)
-    #     text.pack(side=LEFT, padx=10, pady=5)
-    #
-    #     print("--------------")
-    #     print("MBR info:  ")
-    #     mbr = Mbr(data)
-    #     mbr.showInforOfPart()
-    #
-    # def NTFS(self,drive, frame):
-    #     path = "\\\.\\"
-    #     for i in range(0, len(drive) - 1):
-    #         path += drive[i]
-    #     print(path)
-    #
-    #     boots = BootSectorNTFS(None, 0, 512, path)
-    #     txt = boots.show_infor()
-    #
-    #     label = Label(frame, text="BIOS Parameter Block information", font=("Georgia", 10), bg="#fffbe6")
-    #     label.pack(anchor=N, padx=5, pady=5)
-    #
-    #     text = Text(frame, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
-    #     text.delete('1.0', "end")
-    #     text.insert(END, txt)
-    #     text.pack(side=LEFT, padx=10, pady=5)
-    #
-    #     MFTable = MFT(filename=path, offset=boots.mft_offset)
-    #     MFTable.preload_entries(1)
-
     def Boot_Sector(self,selected_drive, frame):
         drive = selected_drive.get()
-        print(drive)
+        if (drive==""):
+            messagebox.showerror("Error", "No drive was chosen! Please choose a drive.")
+            return
         list = frame.pack_slaves()
         for l in list:
             l.destroy()
-        label = Label(frame, text="BIOS Parameter Block information", font=("Georgia", 10), bg="#fffbe6")
+        label = Label(frame, text="BIOS Parameter Block information", font=("Cambria", 10), bg="#fffbe6")
         label.pack(anchor=N, padx=5, pady=5)
         if (win32api.GetVolumeInformation(drive)[4]=='FAT32'):
             path = "\\\.\\"
@@ -134,9 +86,9 @@ class App(Frame):
             pbr_fat = PbrFat(data)
             pbr_fat.readFat()
             txt = pbr_fat.showInfo()
-            text = Text(frame, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
+            text = Text(frame, font=("Cambria", 12), bg="#b9e4c9", spacing1=4, relief=FLAT)
             text.insert(END, txt)
-            text.pack(side=LEFT, padx=20, pady=5)
+            text.pack(side=LEFT, padx=50, pady=10)
         if (win32api.GetVolumeInformation(selected_drive.get())[4]=='NTFS'):
             path = "\\\.\\"
             for i in range(0, len(drive) - 1):
@@ -144,40 +96,9 @@ class App(Frame):
             print(path)
             boots = BootSectorNTFS(None, 0, 512, path)
             txt = boots.show_infor()
-            text = Text(frame, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
+            text = Text(frame, font=("Cambria", 12), bg="#b9e4c9", spacing1=4, relief=FLAT)
             text.insert(END, txt)
-            text.pack(side=LEFT, padx=20, pady=5)
-
-    def MBR(self,selected_drive, frame):
-        drive = selected_drive.get()
-        print(drive)
-        list = frame.pack_slaves()
-        for l in list:
-            l.destroy()
-        if (win32api.GetVolumeInformation(drive)[4]=='FAT32'):
-            label = Label(frame, text="Master Boot Record", font=("Georgia", 10), bg="#fffbe6")
-            label.pack(anchor=N, padx=5, pady=5)
-            path = "\\\.\\"
-            for i in range(0, len(drive) - 1):
-                path += drive[i]
-            data = BootSectorFAT32().readBootSector(path)
-            mbr = Mbr(data)
-            txt = mbr.showInforOfPart()
-            text = Text(frame, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
-            text.insert(END, txt)
-            text.pack(side=TOP, padx=20, pady=5)
-        if (win32api.GetVolumeInformation(selected_drive.get())[4]=='NTFS'):
-            label = Label(frame, text="Master Boot Record", font=("Georgia", 10), bg="#fffbe6")
-            label.pack(anchor=N, padx=5, pady=5)
-            path = "\\\.\\"
-            for i in range(0, len(drive) - 1):
-                path += drive[i]
-            boots = BootSectorNTFS(None, 0, 512, path)
-            mbr = Mbr(boots.data_boot())
-            txt = mbr.showInforOfPart()
-            text = Text(frame, font=("Cambria", 12), bg="#fffbe6", spacing1=4, relief=FLAT)
-            text.insert(END, txt)
-            text.pack(side=LEFT, padx=20, pady=5)
+            text.pack(side=LEFT, padx=50, pady=10)
 
     def open_children(self,parent):
         self.tree.item(parent, open=True)
@@ -187,21 +108,18 @@ class App(Frame):
     def handleOpenEvent(self,event):
         self.open_children(self.tree.focus())
 
-
-
     ####....Directory
     def getPath(self, item, path):
         parent_iid = self.tree.parent(item)
         if parent_iid:
             temp = self.tree.item(parent_iid)['text']
-            # print(temp)
             return self.getPath(parent_iid, "\\"+self.tree.item(item, "text")+path)
         return "\\"+self.tree.item(item, "text")+path
+
     def OnDoubleClick(self, event):
         item = self.tree.selection()
         print("you clicked on", self.tree.item(item, "text"))
         path = ''
-        # path = '\\'+ self.tree.item(item, "text")
         path = self.getPath(item, path)
         path = path[1:len(path)]
         path = open(path, 'r', encoding='utf-8')
@@ -209,7 +127,7 @@ class App(Frame):
         path.close()
         window = Tk()
         window.title(self.tree.item(item, "text"))
-        window.geometry("300x300+300+300")
+        window.geometry("300x300+800+100")
         text = Text(window, font=("Cambria", 12), bg="white", spacing1=4, relief=FLAT)
         text.insert(END, data)
         text.pack()
@@ -219,7 +137,6 @@ class App(Frame):
         item = self.tree.selection()
         print("you clicked on", self.tree.item(item, "text"))
         path = ''
-        # path = '\\'+ self.tree.item(item, "text")
         path = self.getPath(item, path)
         path = path[1:len(path)]
         property = self.treeOfDirectory.getPropertyFromPath(path)
@@ -253,8 +170,11 @@ class App(Frame):
 
     def Directory(self, selected_drive, frame):
         drive = selected_drive.get()
+        if (drive==""):
+            messagebox.showerror("Error", "No drive was chosen! Please choose a drive.")
+            return
         #get tree information
-        path=""
+        path = ""
         if (win32api.GetVolumeInformation(drive)[4]=='FAT32'):
             path = "\\\.\\"
             for i in range(0, len(drive) - 1):
@@ -305,8 +225,6 @@ class App(Frame):
         self.tree.configure(yscrollcommand=lambda f, l: self.autoscroll(ysb, f, l),
                             xscrollcommand=lambda f, l: self.autoscroll(xsb, f, l))
 
-        # print(path[4:len(path)])
-
         self.insertDirectory(self.treeOfDirectory.getRoot(),path[4:len(path)])
 
         self.tree.bind('<<TreeviewOpen>>', self.handleOpenEvent)
@@ -321,7 +239,7 @@ class App(Frame):
         frame1 = Frame(tab2, bg="#fffbe6")
         frame1.pack()
 
-        label1 = Label(frame1, text='Drive Selection', font=("Georgia", 10), bg="#fffbe6")
+        label1 = Label(frame1, text='Drive Selection', font=("Cambria", 10, 'bold'), fg='#356859', bg="#fffbe6")
         label1.pack(side=LEFT, padx=10, pady=25)
 
         drives = win32api.GetLogicalDriveStrings()
@@ -339,22 +257,18 @@ class App(Frame):
 
         frame2 = Frame(tab2, bg="#fffbe6")
         frame2.pack()
-        button = tkinter.Button(frame1, text='Boot Sector', font=("Georgia", 10), bg="#7be37b", activeforeground='white',
-                                activebackground='firebrick4', command=lambda: self.Boot_Sector(selected_drive, frame2))
+        button = tkinter.Button(frame1, text='Boot Sector', font=("Cambria", 10), bg="#b9e4c9", activeforeground='#fd5523',
+                                activebackground='#37966f', command=lambda: self.Boot_Sector(selected_drive, frame2))
         button.pack(side=LEFT, padx=10, pady=25)
 
-        button1 = tkinter.Button(frame1, text='MBR', font=("Georgia", 10), bg="#7be37b", activeforeground='white',
-                                activebackground='firebrick4', command=lambda: self.MBR(selected_drive, frame2))
-        button1.pack(side=LEFT, padx=10, pady=25)
-
-        button2 = tkinter.Button(frame1, text='Directory', font=("Georgia", 10), bg="#7be37b", activeforeground='white',
-                                 activebackground='firebrick4', command=lambda: self.Directory(selected_drive, frame2))
+        button2 = tkinter.Button(frame1, text='Directory', font=("Cambria", 10), bg="#b9e4c9", activeforeground='#fd5523',
+                                activebackground='#37966f', command=lambda: self.Directory(selected_drive, frame2))
         button2.pack(side=LEFT, padx=10, pady=25)
         # button.grid(column=4, row=5, padx=10, pady=25)
 
     def initUI(self):
         self.parent.title("Operating System")
-        mygreen = "#d2ffd2"
+        mygreen = "#b4e4c9"
         myred = "#dd0202"
         self.style = ttk.Style()
 
@@ -385,6 +299,6 @@ class App(Frame):
 
 
 root = Tk()
-root.geometry("600x400+300+200")
+root.geometry("600x400+100+100")
 app = App(root)
 root.mainloop()
