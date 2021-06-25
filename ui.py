@@ -1,6 +1,5 @@
 from boot_sector_fat32 import *
 from partition_boot_sector_ntfs import *
-from mbr import *
 import tkinter
 from tkinter import *
 from tkinter import Tk, Text, TOP, BOTH, X, N, LEFT, scrolledtext, messagebox
@@ -10,8 +9,33 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 import win32api
 import os
-from tkinter import filedialog
-import win32file
+
+getApp={".doc":"Microsoft Word",
+        ".docx":"Microsoft Word",
+        ".pdf":"Adobe Reader",
+        ".tex":"LaTeX",
+        ".xls":"Microsoft Excel",
+        ".xlsx":"Microsoft Excel",
+        ".ppt":"Microsoft PowerPoint",
+        ".pptx":"Microsoft PowerPoint",
+        ".bmp":"Microsoft Photos",
+        ".png":"Microsoft Photos",
+        ".jpeg":"Microsoft Photos",
+        ".jpg":"Microsoft Photos",
+        ".mp3":"Window Media Player",
+        ".wav":"Window Media Player",
+        ".psd":"Adobe Photoshop",
+        ".mp4":"Microsoft Movies & TV",
+        ".avi":"Microsoft Movies & TV",
+        ".mov":"Microsoft Movies & TV",
+        ".rar":"Rar",
+        ".7z":"7-Zip",
+        ".zip":"Zip",
+        ".exe":"Command prompt",
+        ".html":"Microsoft Edge",
+        ".htm":"Microsoft Edge"
+}
+
 
 class App(Frame):
     def __init__(self, parent):
@@ -70,9 +94,10 @@ class App(Frame):
 
     def Boot_Sector(self,selected_drive, frame):
         drive = selected_drive.get()
-        if (drive==""):
-            messagebox.showerror("Error", "No drive was chosen! Please choose a drive.")
+        if drive=="":
+            tkinter.messagebox.showwarning(title="Warning", message="No drive was chosen! Please choose a drive.")
             return
+        print(drive)
         list = frame.pack_slaves()
         for l in list:
             l.destroy()
@@ -100,6 +125,7 @@ class App(Frame):
             text.insert(END, txt)
             text.pack(side=LEFT, padx=50, pady=10)
 
+
     def open_children(self,parent):
         self.tree.item(parent, open=True)
         for child in self.tree.get_children(parent):
@@ -119,19 +145,37 @@ class App(Frame):
     def OnDoubleClick(self, event):
         item = self.tree.selection()
         print("you clicked on", self.tree.item(item, "text"))
-        path = ''
-        path = self.getPath(item, path)
-        path = path[1:len(path)]
-        path = open(path, 'r', encoding='utf-8')
-        data = path.read()
-        path.close()
-        window = Tk()
-        window.title(self.tree.item(item, "text"))
-        window.geometry("300x300+800+100")
-        text = Text(window, font=("Cambria", 12), bg="white", spacing1=4, relief=FLAT)
-        text.insert(END, data)
-        text.pack()
-        window.mainloop()
+        filename, file_extension = os.path.splitext(self.tree.item(item, "text"))
+        print(filename,file_extension)
+        if (file_extension==".txt"):
+            path = ''
+            # path = '\\'+ self.tree.item(item, "text")
+            path = self.getPath(item, path)
+            path = path[1:len(path)]
+            path = open(path, 'r', encoding='utf-8')
+            data = path.read()
+            path.close()
+            window = Tk()
+            window.title(self.tree.item(item, "text"))
+            window.geometry("300x300+300+300")
+            text = Text(window, font=("Cambria", 12), bg="white", spacing1=4, relief=FLAT)
+            text.insert(END, data)
+            text.pack()
+            window.mainloop()
+        else:
+            path = ''
+            path = self.getPath(item, path)
+            path = path[1:len(path)]
+            if file_extension=="":
+                return
+            try:
+                extension=getApp[file_extension]
+            except:
+                tkinter.messagebox.showwarning(title="Warning",message="Couldn't find the appropriate app to open this file")
+            else:
+                msgBox=tkinter.messagebox.askyesno (title="Recommend application", message="This file can be opened with "+extension)
+                if msgBox:
+                    os.system(path)
 
     def OnSelection(self, text):
         item = self.tree.selection()
@@ -170,12 +214,19 @@ class App(Frame):
 
     def Directory(self, selected_drive, frame):
         drive = selected_drive.get()
-        if (drive==""):
-            messagebox.showerror("Error", "No drive was chosen! Please choose a drive.")
+        if drive == "":
+            tkinter.messagebox.showwarning(title="Warning", message="No drive was chosen! Please choose a drive.")
             return
-        #get tree information
+
+        window = tkinter.Toplevel()
+        window.geometry("250x30")
+        window.title('Notification')
+        Message(window,text="Waiting for a second......", padx=30, pady=50).pack()
+        window.update()
+
+        # get tree information
         path = ""
-        if (win32api.GetVolumeInformation(drive)[4]=='FAT32'):
+        if (win32api.GetVolumeInformation(drive)[4] == 'FAT32'):
             path = "\\\.\\"
             for i in range(0, len(drive) - 1):
                 path += drive[i]
@@ -186,7 +237,7 @@ class App(Frame):
             dir = fat_table.getRootDirectory()
             fat_table.getDirectory(dir)
             self.treeOfDirectory = Root(fat_table.getDir())
-        if (win32api.GetVolumeInformation(selected_drive.get())[4]=='NTFS'):
+        if (win32api.GetVolumeInformation(selected_drive.get())[4] == 'NTFS'):
             path = "\\\.\\"
             for i in range(0, len(drive) - 1):
                 path += drive[i]
@@ -194,7 +245,7 @@ class App(Frame):
             MFTable = MFT(filename=path, offset=boots.mft_offset)
             MFTable.preload_entries()
             # myTree = RootNTFS(MFTable.entries)
-            self.treeOfDirectory= RootNTFS(MFTable.entries,path)
+            self.treeOfDirectory = RootNTFS(MFTable.entries, path)
         list = frame.pack_slaves()
         for l in list:
             l.destroy()
@@ -225,8 +276,8 @@ class App(Frame):
         self.tree.configure(yscrollcommand=lambda f, l: self.autoscroll(ysb, f, l),
                             xscrollcommand=lambda f, l: self.autoscroll(xsb, f, l))
 
-        self.insertDirectory(self.treeOfDirectory.getRoot(),path[4:len(path)])
-
+        self.insertDirectory(self.treeOfDirectory.getRoot(), path[4:len(path)])
+        window.destroy()
         self.tree.bind('<<TreeviewOpen>>', self.handleOpenEvent)
         self.tree.bind("<Double-1>", self.OnDoubleClick)
         self.tree.bind("<ButtonRelease-1>", lambda envent: self.OnSelection(text))
@@ -244,8 +295,6 @@ class App(Frame):
 
         drives = win32api.GetLogicalDriveStrings()
         drives = drives.split('\000')[:-1]
-        # for drive in drives:
-        #     print(win32api.GetVolumeInformation(drive)[4])
 
         selected_drive = tkinter.StringVar()
         combobox = ttk.Combobox(frame1, textvariable=selected_drive)
@@ -253,7 +302,6 @@ class App(Frame):
         combobox['state'] = 'readonly'
         combobox.pack(side=LEFT, padx=10, pady=25)
         combobox.bind("<<ComboboxSelected>>", self.callback)
-        # combobox.grid(column=3, row=5, padx=10, pady=25)
 
         frame2 = Frame(tab2, bg="#fffbe6")
         frame2.pack()
@@ -261,10 +309,9 @@ class App(Frame):
                                 activebackground='#37966f', command=lambda: self.Boot_Sector(selected_drive, frame2))
         button.pack(side=LEFT, padx=10, pady=25)
 
-        button2 = tkinter.Button(frame1, text='Directory', font=("Cambria", 10), bg="#b9e4c9", activeforeground='#fd5523',
-                                activebackground='#37966f', command=lambda: self.Directory(selected_drive, frame2))
+        button2 = tkinter.Button(frame1, text='Directory', font=("Georgia", 10), bg="#7be37b", activeforeground='white',
+                                 activebackground='firebrick4', command=lambda: self.Directory(selected_drive, frame2))
         button2.pack(side=LEFT, padx=10, pady=25)
-        # button.grid(column=4, row=5, padx=10, pady=25)
 
     def initUI(self):
         self.parent.title("Operating System")

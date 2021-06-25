@@ -1,8 +1,7 @@
-from mbr import *
-from mft_header_ntfs import *
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
+from rawstruct import *
 MFT_ATTR_STANDARD_INFORMATION = 0x10
 MFT_ATTR_ATTRIBUTE_LIST = 0x20
 MFT_ATTR_FILENAME = 0x30
@@ -23,6 +22,33 @@ ATTR_COMPRESSION_MASK = 0x00ff
 ATTR_IS_ENCRYPTED = 0x4000
 ATTR_IS_SPARSE = 0x8000
 
+class MFTAttrHeader(RawStruct):
+    def __init__(self, data):
+        RawStruct.__init__(self, data)
+        self.type = self.get_uint(0)
+        self.length = self.get_uint(0x4)
+        self.non_resident_flag = self.get_uchar(0x08)
+        self.length_of_name = self.get_uchar(0x09)
+        self.offset_to_name = self.get_ushort(0x0A)
+        self.flags = self.get_ushort(0x0C)
+        self.identifier = self.get_ushort(0x0E)
+
+        if (self.non_resident_flag):
+            self.lowest_vcn = self.get_ulonglong(0x10)
+            self.highest_vcn = self.get_ulonglong(0x18)
+            self.data_run_offset = self.get_ushort(0x20)
+            self.comp_unit_size = self.get_ushort(0x22)
+            self.alloc_size = self.get_ulonglong(0x28)
+            self.real_size = self.get_ulonglong(0x30)
+            self.data_size = self.get_ulonglong(0x38)
+            if (self.length_of_name > 0):
+                self.attr_name = self.get_chunk(0x40, 2 * self.length_of_name).decode('utf-16')
+        else:
+            self.real_size = self.get_uint(0x10)
+            self.attr_offset = self.get_ushort(0x14)
+            self.indexed = self.get_uchar(0x16)
+            if (self.length_of_name > 0):
+                self.attr_name = self.get_chunk(0x18, 2 * self.length_of_name).decode('utf-16')
 
 class MFTAttr(RawStruct):
     def __init__(self, data):
@@ -31,20 +57,15 @@ class MFTAttr(RawStruct):
         non_resident_flag = self.get_uchar(8)
         namength = self.get_uchar(9)
         header_size = 0
-
         if non_resident_flag:
             if namength == 0:
-                # Non Resident, No Name
                 header_size = 0x40
             else:
-                # Non Resident, Has Name
                 header_size = 0x40 + 2 * namength
         else:
             if namength == 0:
-                # Resident, No Name
                 header_size = 0x18
             else:
-                # Resident, Has Name
                 header_size = 0x18 + 2 * namength
 
         self.header = MFTAttrHeader(
@@ -69,40 +90,21 @@ class MFTAttr(RawStruct):
         }
         if attr_type not in constructors:
             return None
-
         return constructors[attr_type](data)
-
-    # def __str__(self):
-    #     name = "N/A"
-    #     resident = "Resident"
-    #     if hasattr(self.header, 'attr_name'):
-    #         name = self.header.attr_name
-    #     if (self.header.non_resident_flag):
-    #         resident = "Non-Resident"
-    #     return "Type: %s Name: %s %s Size: %d" % (self.type_str, name, resident,self.header.length)
 
 class MFTAttrStandardInformation(MFTAttr):
     def __init__(self, data):
         MFTAttr.__init__(self, data)
         self.type_str = "$STANDARD_INFORMATION"
         offset = self.header.size
-        # File Creation
         self.ctime = self.get_ulonglong(offset)
-        # File Alteration
         self.atime = self.get_ulonglong(offset + 0x08)
-        # MFT Changed
         self.mtime = self.get_ulonglong(offset + 0x10)
-        # File Read
         self.rtime = self.get_ulonglong(offset + 0x18)
-        # DOS File Permissions
         self.perm = self.get_uint(offset + 0x20)
-        # Maximum Number of Versions
         self.versions = self.get_uint(offset + 0x20)
-        # Version Number
         self.version = self.get_uint(offset + 0x28)
         self.class_id = self.get_uint(offset + 0x2C)
-
-        # Not all SI headers include 2K fields
         if (self.size > 0x48):
             self.owner_id = self.get_uint(offset + 0x30)
             self.sec_id = self.get_uint(offset + 0x34)
@@ -111,34 +113,15 @@ class MFTAttrStandardInformation(MFTAttr):
 
     
     def ctime_dt(self):
-        """
-        Returns:
-            datetime: File creation date in Python's datetime format.
-        """
         return filetime_to_dt(self.ctime)
 
-    
     def atime_dt(self):
-        """
-        Returns:
-            datetime: File modification date in Python's datetime format.
-        """
         return filetime_to_dt(self.atime)
 
-    
     def mtime_dt(self):
-        """
-        Returns:
-            datetime: MFT entry modification date in Python's datetime format.
-        """
         return filetime_to_dt(self.mtime)
 
-    
     def rtime_dt(self):
-        """
-        Returns:
-            datetime: Last file access date in Python's datetime format.
-        """
         return filetime_to_dt(self.rtime)
 
 
@@ -170,15 +153,12 @@ class MFTAttrFilename(MFTAttr):
     def ctime_dt(self):
         return filetime_to_dt(self.ctime)
 
-    
     def atime_dt(self):
         return filetime_to_dt(self.atime)
-
     
     def mtime_dt(self):
         return filetime_to_dt(self.mtime)
 
-    
     def rtime_dt(self):
         return filetime_to_dt(self.rtime)
 
@@ -204,8 +184,6 @@ class MFTAttrVolumeName(MFTAttr):
         self.vol_name = self.get_chunk(
             offset, 2 * length).decode('utf-16').partition(b'\0')[0]
 
-# Volume Flags
-
 VOLUME_IS_DIRTY = 0x0001
 VOLUME_RESIZE_LOG_FILE = 0x0002
 VOLUME_UPGRADE_ON_MOUNT = 0x0004
@@ -230,8 +208,6 @@ class MFTAttrData(MFTAttr):
         MFTAttr.__init__(self, data)
         self.type_str = "$DATA"
         offset = self.header.size
-        # self.cluster_count=self.get_ushort(offset + 0x01)
-        # self.first_cluster=self.get_ushort(offset+0x03)
 
 class MFTAttrIndexRoot(MFTAttr):
     def __init__(self, data):
@@ -265,12 +241,6 @@ class MFTAttrLoggedToolstream(MFTAttr):
 EPOCH_AS_FILETIME = 116444736000000000  # January 1, 1970 as MS file time
 HUNDREDS_OF_NANOSECONDS = 10000000
 def filetime_to_dt(ft):
-    # Get seconds and remainder in terms of Unix epoch
     (s, ns100) = divmod(ft - EPOCH_AS_FILETIME, HUNDREDS_OF_NANOSECONDS)
-    # Convert to datetime object
     dt=datetime.fromtimestamp(s, tz=timezone.utc)+ timedelta(hours=7)
-    # dt=datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(hours=1)
-    # dt = datetime.fromtimestamp(s, datetime.timezone.utc)
-    # Add remainder in as microseconds. Python 3.2 requires an integer
-    # dt = dt.replace(microsecond=(ns100 // 10))
     return dt

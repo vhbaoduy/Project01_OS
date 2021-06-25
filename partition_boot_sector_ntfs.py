@@ -1,4 +1,3 @@
-from mbr import *
 from mft_attribute_ntfs import *
 from directory_ntfs import *
 BPB_SIZE = 25
@@ -23,8 +22,6 @@ class BootSectorNTFS(RawStruct):
         self.mft_offset=self.bpb.mft_offset()
         self.mft_mirror_offet=self.bpb.mft_mirror_offset()
         self.mft_record_size=self.bpb.mft_record_size()
-        # print(self.mft_record_size)
-        # print(self.mft_offset)
     def data_boot(self):
         return self.data
     def show_infor(self):
@@ -112,35 +109,18 @@ class MFT(object):
         self.entry_size=entry_size
         self.filename=filename
         self.entries=[filename]
-        # self.entries = []
-        # self.dir=[0 for i in range(100)]
-        # self.dir[5]=Node("root")
     def get_entry(self,entry_id):
         entry_offset = entry_id * self.entry_size
-        # load entry
-        self.entry = MFTEntry(filename=self.filename, offset=self.offset + entry_offset, length=self.entry_size,
-                              index=entry_id)
-        # print(self.entry.property)
-        # print(self.entry.fname_str)
-        if self.entry.fname_str=="" or not self.entry.is_in_use():
+        self.entry = MFTEntry(filename=self.filename, offset=self.offset + entry_offset, length=self.entry_size,index=entry_id)
+        if str(self.entry.header.file_signature)[2:6]!="FILE":
             return False
-        # self.dir[self.entry.header.ID]=Node(self.entry.fname_str,parent=self.dir[self.entry.parent_ID])
-        # print(self.entry.fname_str,self.entry.header.ID,self.entry.parent_ID)
         self.entries.append(self.entry)
-        # print(self.entry.getProperties())
         return True
 
     def preload_entries(self):
         n=0
         while (self.get_entry(n)):
-            # print(n,self.entry.getProperties())
             n += 1
-        # for pre, fill, node in RenderTree(self.dir[5]):
-        #     print("%s%s" % (pre, node.name))
-        # for ent in self.entries:
-        #     print(ent.getProperties())
-        # for ent in self.entries:
-        #     print(ent.getProperties())
 
 class MFTEntryHeader(RawStruct):
     def __init__(self,data):
@@ -166,20 +146,13 @@ class MFTEntry(RawStruct):
         self.attributes=[]
         self.fname_str=""
         self.check_data=0
-        # self.flags=self.parent_ID=self.ctime =self.atime = self.mtime = self.rtime = self.real_size = self.flags = None
         self.property=""
         self.real_size=None
         self.header=MFTEntryHeader(self.get_chunk(0, HEADER_SIZE))
         self.load_attributes()
         if self.check_data:
             self.property += "\nFilesize: " + str(self.real_size) + " (bytes)"
-
-        # self.property += "\nFirst cluster: " + str(self.firstClusterNumber)
-        # self.property += "\nNum cluster:" + str(self.numCluster)
-
-        # self.property += "\nEntry count: " + str(self.entryCount)
-        # self.property += "\n[Start Sector - End Sector]: " + str(self.firstStartSector) + " - " + str(self.lastSector)
-
+        self.property += "\n[Start Sector - End Sector]: " + str(int(offset/512)) + " - " + str(int(offset/512+self.header.allocated_size/512))
     def is_directory(self):
         return self.header.flags & 0x0002
 
@@ -246,28 +219,8 @@ class MFTEntry(RawStruct):
                     if self.check_data==0:
                         self.real_size = attr.header.real_size
                     self.check_data+=1
-                    # print(attr.first_cluster,attr.cluster_count)
                 self.attributes.append(attr)
                 free_space = free_space - attr.header.length
                 offset = offset + attr.header.length
             else:
                 break
-
-def NTFS():
-    boots = BootSectorNTFS(None, 0, 512, r"\\.\E:")
-    boots.show_infor()
-    print("--------------")
-    print("MBR info:  ")
-    mbr = Mbr(boots.data_boot())
-    mbr.showInforOfPart()
-
-if __name__ == "__main__":
-    boots = BootSectorNTFS(None, 0, 512, r"\\.\E:")
-    MFTable=MFT(filename=r"\\.\E:",offset=boots.mft_offset)
-    MFTable.preload_entries()
-    print("-------------")
-    root=RootNTFS(MFTable.entries,r"\\.\E:")
-    entries = root.getNodeList()
-    # for v in entries:
-    #     if not v.isEmpty():
-    #         print(v.getFileName())

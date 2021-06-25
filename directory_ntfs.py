@@ -1,8 +1,5 @@
-from partition_boot_sector_ntfs import *
-
 class NodeNTFS():
     def __init__(self,entry =None,parent = None, id=None, path="", name=""):
-        #type = entry
         path+="\\"
         self.path = path+name
         self.entry = entry
