@@ -216,7 +216,7 @@ class Root():
     def getPropertyFromPath(self, path):
         if path == self.rootPath:
             folder, file = self.getNumberOfFoldersAndFiles()
-            property = "Contains: " + str(folder) + " Fodlders, " + str(file) + " Files\n"
+            property = "Contains: " + str(folder) + " Folders, " + str(file) + " Files\n"
             return property
         else:
             property = None

@@ -94,14 +94,14 @@ class App(Frame):
 
     def Boot_Sector(self,selected_drive, frame):
         drive = selected_drive.get()
-        if drive=="":
+        if drive == "":
             tkinter.messagebox.showerror(title="Error", message="No drive was chosen! Please choose a drive.")
             return
         print(drive)
         list = frame.pack_slaves()
         for l in list:
             l.destroy()
-        label = Label(frame, text="BIOS Parameter Block information", font=("Cambria", 10), bg="#fffbe6")
+        label = Label(frame, text="BIOS Parameter Block information", font=("Cambria", 12), bg="#fffbe6")
         label.pack(anchor=N, padx=5, pady=5)
         if (win32api.GetVolumeInformation(drive)[4]=='FAT32'):
             path = "\\\.\\"
@@ -309,8 +309,8 @@ class App(Frame):
                                 activebackground='#37966f', command=lambda: self.Boot_Sector(selected_drive, frame2))
         button.pack(side=LEFT, padx=10, pady=25)
 
-        button2 = tkinter.Button(frame1, text='Directory', font=("Georgia", 10), bg="#7be37b", activeforeground='white',
-                                 activebackground='firebrick4', command=lambda: self.Directory(selected_drive, frame2))
+        button2 = tkinter.Button(frame1, text='Directory', font=("Georgia", 10), bg="#b9e4c9", activeforeground='#fd5523',
+                                activebackground='#37966f', command=lambda: self.Directory(selected_drive, frame2))
         button2.pack(side=LEFT, padx=10, pady=25)
 
     def initUI(self):
