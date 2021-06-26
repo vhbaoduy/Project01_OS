@@ -151,7 +151,7 @@ class MFTEntry(RawStruct):
         self.header=MFTEntryHeader(self.get_chunk(0, HEADER_SIZE))
         self.load_attributes()
         if self.check_data:
-            self.property += "\nFilesize: " + str(self.real_size) + " (bytes)"
+            self.property += "\nFile Size: " + str(self.real_size) + " (bytes)"
         self.property += "\n[Start Sector - End Sector]: " + str(int(offset/512)) + " - " + str(int(offset/512+self.header.allocated_size/512))
     def is_directory(self):
         return self.header.flags & 0x0002

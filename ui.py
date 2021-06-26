@@ -12,7 +12,7 @@ import os
 
 getApp={".doc":"Microsoft Word",
         ".docx":"Microsoft Word",
-        ".pdf":"Adobe Reader",
+        ".pdf":"Adobe Reader, Microsoft Edge,...",
         ".tex":"LaTeX",
         ".xls":"Microsoft Excel",
         ".xlsx":"Microsoft Excel",
@@ -25,12 +25,12 @@ getApp={".doc":"Microsoft Word",
         ".mp3":"Window Media Player",
         ".wav":"Window Media Player",
         ".psd":"Adobe Photoshop",
-        ".mp4":"Microsoft Movies & TV",
-        ".avi":"Microsoft Movies & TV",
-        ".mov":"Microsoft Movies & TV",
-        ".rar":"Rar",
-        ".7z":"7-Zip",
-        ".zip":"Zip",
+        ".mp4":"Microsoft Movies & TV, Window Media Player,...",
+        ".avi":"Microsoft Movies & TV, Window Media Player,...",
+        ".mov":"Microsoft Movies & TV, Window Media Player,...",
+        ".rar":"Rar, 7-zip,...",
+        ".7z":"Rar,7-Zip,...",
+        ".zip":"Rar,7-Zip,...",
         ".exe":"Command prompt",
         ".html":"Microsoft Edge",
         ".htm":"Microsoft Edge"
@@ -146,10 +146,9 @@ class App(Frame):
         item = self.tree.selection()
         print("you clicked on", self.tree.item(item, "text"))
         filename, file_extension = os.path.splitext(self.tree.item(item, "text"))
-        print(filename,file_extension)
+        file_extension=file_extension.lower()
         if (file_extension==".txt"):
             path = ''
-            # path = '\\'+ self.tree.item(item, "text")
             path = self.getPath(item, path)
             path = path[1:len(path)]
             path = open(path, 'r', encoding='utf-8')
@@ -173,9 +172,10 @@ class App(Frame):
             except:
                 tkinter.messagebox.showwarning(title="Warning",message="Couldn't find the appropriate app to open this file.")
             else:
-                msgBox=tkinter.messagebox.askyesno (title="Recommend application", message="This file can be opened with "+extension+".")
+                msgBox=tkinter.messagebox.askyesno (title="Recommend application", message="This file can be opened with "+extension+".Do you want to open?")
                 if msgBox:
-                    os.system(path)
+                    print("Open:",path)
+                    os.startfile(path)
 
     def OnSelection(self, text):
         item = self.tree.selection()
@@ -219,9 +219,9 @@ class App(Frame):
             return
 
         window = tkinter.Toplevel()
-        window.geometry("250x30")
+        window.geometry("250x40")
         window.title('Notification')
-        Message(window,text="Waiting for a second......", padx=30, pady=50).pack()
+        Message(window,text="Waiting a second......", padx=30, pady=50).pack()
         window.update()
 
         # get tree information
